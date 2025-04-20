@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv = "X-UA-Compatible" content= "IE=edge">
+    <meta name = "viewport" content = "width=device-width, initial-scale=1.0">
+    <title> Tracking </title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tracking.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>  
+    <header>
+        <h2 class = "logo"> Calories </h2>
+        <nav class = "navigation">
+            <a href = "{{ url_for('tracking_page') }}"> Tracking </a>
+            <a href = "{{ url_for('progress_page') }}"> Progress </a>
+            <a href = "{{ url_for('profile_page') }}"> Profile </a>
+            <button class="btnLogin-popup"> Log out </button>
+        </nav>
+    </header>
+
+    <div class="wrapper">
+        <div class="container">
+            <section class="input-section">
+                <h2><i class="fas fa-location-arrow"></i> Enter Information</h2>
+                <div class="input-group">
+                    <label for="ipAddress"><i class="fas fa-network-wired"></i> IP Address:</label>
+                    <input type="text" id="ipAddress" placeholder="Enter your IP">
+                </div>
+                <button class="track-button" onclick="startTracking()">
+                    <i class="fas fa-play"></i> Start Tracking
+                </button>
+                <button class="end-button" onclick="endTracking()">
+                    <i class="fas fa-stop-circle"></i> End Session
+                </button>
+            </section>
+
+            <section class="work-section">
+                <h2><i class="fas fa-chart-line"></i> Activity Statistics</h2>
+                <div class="work-details">
+                    <div class="data-list">
+                        <div class="data-item"><i class="far fa-clock"></i> <span class="label">Time:</span> <span class="value" id="current-time">0:00:00</span></div>
+                        <div class="data-item"><i class="fas fa-fire"></i> <span class="label">Calories:</span> <span class="value" id="current-calories">0 kcal</span></div>
+                        <div class="data-item"><i class="fas fa-shoe-prints"></i> <span class="label">Distance:</span> <span class="value" id="current-distance">0 km</span></div>
+                    </div>
+                </div>
+                </section>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/tracking.js') }}"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    /* display: flex; */
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    /* background-image: url('{{ url_for('static', filename='img/hero.jpg') }}'); Đường dẫn hình ảnh */
+    background-repeat: no-repeat; /* Không lặp lại hình ảnh */
+    background-size: cover; /* Phủ toàn bộ vùng chứa */
+    background-position: center center; /* Căn giữa hình ảnh */
+    background-attachment: fixed; /* Giữ hình ảnh cố định khi cuộn */
+}
+
+.overlay {
+    background-color: rgba(0, 0, 0, 0.6);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    align-items: center;
+    padding: 2rem;
+    color: white;
+}
+
+/* .logo {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    font-size: 2rem;
+    font-weight: bold;
+    background: linear-gradient(to right, #99f, #f9f);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    z-index: 10;
+} */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (min-width: 768px) {
+    .container {
+    flex-direction: row;
+    padding: 4rem;
+    }
+}
+
+.image-container img {
+    width: 100%;
+    max-width: 500px;
+    border: 1px solid white;
+    border-radius: 10px;
+}
+
+.text-content {
+    max-width: 600px;
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+p {
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+#showLoginPopup {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    background-color: #162938; 
+    border: none;
+    border-radius: 8px;
+    margin-top: 1rem;
+    cursor: pointer;
+    color: white;
+}
+
+#showLoginPopup:hover {
+    background-color: #111d28;
+}
+
+/* ---------------------------------------------------- */
+
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 20px 100px;
+    /* background: #162938; */
+    /* background-color: rgba(22, 41, 56, 0.8); */
+    display: flex;
+    justify-content:space-between;
+    align-items: center;
+    z-index: 99;
+}
+
+.logo{
+    font-size: 2em;
+    color: #fff;
+    user-select: none;
+}
+
+.wrapper {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    /* width: auto;
+    height: auto; */
+    width: 400px;
+    height: 440px;
+    /* background: transparent; */
+    background-color: #ffffffe6;
+    /* border: 2px solid rgba(255, 255, 255, .5); */
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 0 30px rgba(0, 0, 0, .5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    overflow: hidden;   
+    transition: transform .5s ease, height .2s ease;
+}
+
+.wrapper.active-popup {
+    transform: translate(-50%, -50%) scale(1);
+
+}
+
+.wrapper.active {
+    width: 500px;
+    height: 550px;
+    /* padding-left: 50px; */
+    /* padding-right: 50px; */
+    /* height: auto; */
+}
+
+.wrapper .form-box {
+    width: 100%;
+    padding: 40px;
+}
+
+.wrapper .form-box.login {
+    transition: transform .18s ease;
+    transform: translateX(0);
+}
+
+.wrapper.active .form-box.login {
+    transition: none;
+    transform: translateX(-800px);
+}
+
+.wrapper .form-box.register {
+    position: absolute;
+    transition: none;
+    transform: translateX(400px);
+}
+
+.wrapper.active .form-box.register {
+    transition: transform .18s ease;
+    transform: translateX(0);
+}
+
+.wrapper .icon-close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 45px;
+    height: 45px;
+    background: #162938;
+    font-size: 2em;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom-left-radius: 20px;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.form-box h2 {
+    font-size: 2em;
+    color: #162938;
+    text-align: center;
+}
+/*  */
+.form-box.register {
+    width: 100%;
+    padding: 50px; /* Điều chỉnh padding nếu cần */
+}
+
+.two-column {
+    display: flex;
+    gap: 35px;
+    /* justify-content: space-around; */
+}
+
+.column {
+    flex: 1;
+}
+
+.form-box.register .input-box {
+    margin: 35px 0; /* Điều chỉnh margin giữa các input box nếu cần */
+}
+
+.form-box.register .remember-forgot {
+    margin: 15px 0 15px; /* Điều chỉnh margin cho checkbox */
+}
+
+.form-box.register .login-register {
+    margin-top: 15px; /* Điều chỉnh margin cho liên kết login */
+}
+
+.form-box.register h2 {
+    margin-top: 15px;
+}
+
+.form-box.register .two-column {
+    margin-bottom: 20px;
+}
+
+.form-box.register .column .input-box {
+    width: 100%; /* Đảm bảo nó vẫn chiếm toàn bộ chiều rộng cột */
+    max-width: 320px; /* Đặt chiều rộng tối đa, bạn có thể điều chỉnh giá trị này */
+}
+
+.input-box {
+    position: relative;
+    width: 100%;
+    height: 50px;
+    border-bottom: 2px solid #162938;
+    margin: 30px 0;
+}
+
+.input-box label {
+    position: absolute;
+    top: 50%;
+    left: 5px;
+    transform: translateY(-50%);
+    font-size: 1em;
+    color: #162938;
+    font-weight: 500;
+    pointer-events: none;
+    transition: .5s;
+}
+
+.input-box input:focus~label,
+.input-box input:valid~label {
+    top: -5px;
+}
+
+.input-box input {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 1em;
+    color: #162938;
+    font-weight: 600;
+    padding: 0 35px 0 5px;
+}
+
+.input-box .icon {
+    position: absolute;
+    right: 8px;
+    font-size: 1.2em;
+    color: #162938; 
+    line-height: 57px;
+}
+
+.remember-forgot {
+    font-size: .9em;
+    color: #162938;
+    font-weight: 500;
+    margin: -15px 0 15px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.remember-forgot label input {
+    accent-color: #162938;
+    margin-right: 3px;
+}
+
+.remember-forgot a {
+    color: #162938;
+    text-decoration: none;
+}
+
+.remember-forgot a:hover {
+    text-decoration: underline;
+}
+
+.btn {
+    width: 100%;
+    height: 45px;
+    background: #162938;
+    border: none;
+    outline: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+    color: #fff;
+    font-weight: 500;
+}
+
+.btn:hover {
+    background: #111d28; /* Màu nền đậm hơn, bạn có thể chọn màu khác */
+}
+
+.login-register {
+    font-size: .9em;
+    color: #162938;
+    text-align: center;
+    font-weight: 500;
+    margin: 25px 0 10px;
+}
+
+.login-register p a {
+    color: #162938;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-register p a:hover {
+    text-decoration: underline;
+}

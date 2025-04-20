@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calorie Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/progress.css') }}">
+</head>
+<body>
+    <header>
+        <h2 class = "logo"> Calories </h2>
+        <nav class = "navigation"> cl
+            <a href = "{{ url_for('tracking_page') }}"> Tracking </a>
+            <a href = "{{ url_for('progress_page') }}"> Progress </a>
+            <a href = "{{ url_for('profile_page') }}"> Profile </a>
+            <button class="btnLogin-popup"> Log out </button>
+            <!-- <button class="btnLogin-popup"> Profile </button> -->
+        </nav>
+    </header>
+    
+    <div class="main-container">
+        <div class="calorie-tracker">
+            <div class="header">
+                <h1>Calorie Tracking</h1>
+            </div>
+            <div class="summary">
+                <div class="avg">
+                    <div class="date-range">Apr 13 - Apr 19</div>
+                    <div class="value">0.0</div>
+                    <div class="label">Avg</div>
+                </div>
+                <div class="total">
+                    <div class="value">0.0</div>
+                    <div class="label">Total</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="y-axis">
+                    <span>0</span>
+                    <span>250</span>
+                    <span>500</span>
+                    <span>750</span>
+                    <span>1000</span>
+                </div>
+                <div class="chart">
+                    <div class="bar orange" style="height: 66.6%;" data-day="S">
+                        <div class="star">⭐</div>
+                    </div>
+                    <div class="bar gray" style="height: 33.3%;" data-day="M"></div>
+                    <div class="bar gray" style="height: 44.4%;" data-day="T"></div>
+                    <div class="bar green new-record" style="height: 80%;" data-day="W">
+                        <div class="star">⭐</div>
+                        <div class="tooltip">
+                            New record!<br>350 Kcal<br>Apr 16 2025
+                        </div>
+                    </div>
+                    <div class="bar gray" style="height: 22.2%;" data-day="T"></div>
+                    <div class="bar gray" style="height: 44.4%;" data-day="F"></div>
+                    <div class="bar gray" style="height: 11.1%;" data-day="S"></div>
+                    <div class="x-axis">
+                        <span>S</span>
+                        <span>M</span>
+                        <span>T</span>
+                        <span>W</span>
+                        <span>T</span>
+                        <span>F</span>
+                        <span>S</span>
+                    </div>
+                    
+                    <div class="target-line"></div>
+                </div>
+            </div>
+            <div class="navigation-buttons"> <button id="prevWeekBtn">&lt;</button>
+                <button id="nextWeekBtn">&gt;</button>
+            </div>
+        </div>
+        <!-- ----------------------------------------- -->
+        <div class="right-section">
+            <div class="completion-card">
+                <div class="progress-circle">
+                    <svg width="140" height="140">
+                        <circle cx="70" cy="70" r="66" stroke="#e0e7ed" stroke-width="8" fill="transparent" />
+                        <circle class="progress-bar" cx="70" cy="70" r="66" stroke="#2196f3" stroke-width="8" fill="transparent" stroke-dasharray="439.82" stroke-dashoffset="4.3982" style="transform: rotate(-90deg); transform-origin: center;" />
+                    </svg>
+                    <div class="percentage">100%</div>
+                </div>
+                <div class="completion-label">✨Today's completion✨</div>
+            </div>
+
+            <div class="healthy-day-card">
+                <div class="number">1</div>
+                <div class="label">healthy day💖</div>
+                <div class="quote">The first step is as good as half over.</div>
+            </div>
+
+            
+        </div>  
+    </div>
+    <script src="{{ url_for('static', filename='js/progress.js') }}"></script>
+
+</body>
+</html>
