@@ -376,3 +376,66 @@ header {
     font-weight: 600; /* Nhãn đậm hơn */
     margin-right: 0.3rem; /* Thêm một chút khoảng cách bên phải nhãn */
 }
+
+.congrats-message {
+    width: 550px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    font-size: 2em;
+    font-weight: bold;
+    opacity: 0;
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    z-index: 10; /* Đảm bảo nó ở trên các phần tử khác */
+    display: flex;
+    flex-direction: column; /* Để các phần tử con xếp theo chiều dọc */
+    align-items: center;
+}
+
+.congrats-message.active {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+
+@keyframes confetti {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(-300px) rotate(720deg); opacity: 0; }
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: gold; /* Màu sắc tùy chọn */
+    border-radius: 50%;
+    opacity: 0;
+    animation: confetti 1s ease-out forwards;
+}
+
+.congrats-message button {
+    background-color: #28a745; /* Màu xanh lá cây */
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    margin-top: 20px;
+}
+
+
+
+.congrats-message button:hover {
+    background-color: #1e7e34; /* Màu xanh lá cây đậm hơn khi hover */
+}
+

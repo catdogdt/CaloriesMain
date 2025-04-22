@@ -3,10 +3,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const prevWeekBtn = document.getElementById('prevWeekBtn');
     const nextWeekBtn = document.getElementById('nextWeekBtn');
     let currentDate = new Date();
+    const percentageDisplay = document.querySelector('.completion-card .percentage');
+    const progressBar = document.querySelector('.completion-card .progress-circle .progress-bar');
+    const circleRadius = 66;
+    const circumference = 2 * Math.PI * circleRadius;   
+    const streakElement = document.getElementById('healthy-streak'); // Lấy phần tử hiển thị numberOfDays
 
     function getWeekDates(date) {
-        const currentDay = date.getDay(); // 0 for Sunday, 1 for Monday, ...
-        const diff = date.getDate() - currentDay + (currentDay === 0 ? -6 : 1); // Adjust when day is Sunday
+        const currentDay = date.getDay();
+        const diff = date.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
         const startOfWeek = new Date(date.setDate(diff));
         const weekDates = [];
         for (let i = 0; i < 7; i++) {
@@ -27,42 +32,84 @@ document.addEventListener('DOMContentLoaded', () => {
         const startDate = formatDate(weekDates[0]);
         const endDate = formatDate(weekDates[6]);
         dateRangeDisplay.textContent = `${startDate} - ${endDate}`;
-        // Ở đây bạn sẽ gọi API để lấy dữ liệu cho tuần này và cập nhật biểu đồ
-        // Ví dụ: fetch(`/api/progress?start=${weekDates[0].toISOString()}&end=${weekDates[6].toISOString()}`)
+        // Gọi API để lấy dữ liệu calo hàng tuần và cập nhật biểu đồ (nếu cần)
+        // fetch(`/api/weekly_calories?start=${weekDates[0].toISOString()}&end=${weekDates[6].toISOString()}`)
+        //     .then(response => response.json())
+        //     .then(data => updateChart(data))
+        //     .catch(error => console.error('Error fetching weekly calories:', error));
         console.log('Fetching data for week:', startDate, '-', endDate);
-        // Placeholder cho việc cập nhật biểu đồ với dữ liệu mới
-        // updateChart(dataForWeek);
     }
 
-    // Hiển thị tuần hiện tại khi trang tải
-    updateDateRange(currentDate);
+    progressBar.style.strokeDasharray = circumference;
+    progressBar.style.strokeDashoffset = circumference;
 
+    function updateCompletionCard(caloriesCurrentday, targetCaloriesburned) {
+        const completionRatio = Math.min(1, caloriesCurrentday / targetCaloriesburned);
+        const percentage = Math.round(completionRatio * 100);
+        percentageDisplay.textContent = `${percentage}%`;
+
+        const offset = circumference - (completionRatio * circumference);
+        progressBar.style.strokeDashoffset = offset;
+    }
+
+    // Gọi API để lấy dữ liệu tiến trình và cập nhật Completion Card
+    function fetchProgressData() {
+        fetch('/api/progress_data')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.caloriesCurrentday !== undefined && data.targetCaloriesburned !== undefined && data.numberOfDays !== undefined) {
+                    updateCompletionCard(data.caloriesCurrentday, data.targetCaloriesburned);
+                    streakElement.textContent = data.numberOfDays; // Hiển thị numberOfDays
+                } else {
+                    console.error('Missing data in response:', data);
+                    percentageDisplay.textContent = 'N/A';
+                    progressBar.style.strokeDashoffset = circumference;
+                    streakElement.textContent = 'N/A'; // Hiển thị N/A nếu thiếu dữ liệu
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching progress data:', error);
+                percentageDisplay.textContent = 'Error';
+                progressBar.style.strokeDashoffset = circumference;
+                streakElement.textContent = 'Error'; // Hiển thị Error nếu có lỗi
+            });
+    }
+
+    // Hiển thị tuần hiện tại và tải dữ liệu tiến trình khi trang tải
+    updateDateRange(currentDate);
+    fetchProgressData();
+    
     prevWeekBtn.addEventListener('click', () => {
         currentDate.setDate(currentDate.getDate() - 7);
         updateDateRange(currentDate);
+        // Có thể gọi lại fetchProgressData nếu bạn muốn hiển thị tiến trình của tuần trước/sau
     });
 
     nextWeekBtn.addEventListener('click', () => {
         currentDate.setDate(currentDate.getDate() + 7);
         updateDateRange(currentDate);
+        // Có thể gọi lại fetchProgressData nếu bạn muốn hiển thị tiến trình của tuần trước/sau
     });
 
-    
     const logoutButton = document.querySelector('.btnLogin-popup');
     if (logoutButton) {
         logoutButton.addEventListener('click', async () => {
             try {
-                const response = await fetch('/auth/logout', { // Đường dẫn API đăng xuất (sẽ được định nghĩa ở backend)
+                const response = await fetch('/auth/logout', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({}), // Có thể không cần body, tùy thuộc vào backend
+                    body: JSON.stringify({}),
                 });
 
                 if (response.ok) {
-                    // Đăng xuất thành công, chuyển hướng về trang đăng nhập
-                    window.location.href = '/'; // Hoặc '/login' tùy thuộc vào route của firstpage.html
+                    window.location.href = '/';
                 } else {
                     const errorData = await response.json();
                     alert(`Logout failed: ${errorData.error || 'Something went wrong'}`);
@@ -76,10 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-
 function updateChart(data) {
-    // Hàm này sẽ nhận dữ liệu mới và cập nhật các cột biểu đồ
-    // Dựa vào cấu trúc dữ liệu bạn nhận được từ backend
+    // Hàm này sẽ nhận dữ liệu mới và cập nhật các cột biểu đồ (nếu bạn có dữ liệu hàng tuần)
     const bars = document.querySelectorAll('.chart .bar');
     bars.forEach((bar, index) => {
         const day = bar.dataset.day;
@@ -87,13 +132,12 @@ function updateChart(data) {
         if (dataForDay) {
             const heightPercentage = (dataForDay.calories / 1000) * 100; // Ví dụ: max calo là 1000
             bar.style.height = `${Math.min(heightPercentage, 100)}%`;
-            // Cập nhật tooltip nếu có dữ liệu chi tiết
             const tooltip = bar.querySelector('.tooltip');
             if (tooltip && dataForDay.details) {
                 tooltip.innerHTML = `Calories: ${dataForDay.details.calories} Kcal<br>Date: ${formatDate(new Date(dataForDay.details.date))}`;
             }
         } else {
-            bar.style.height = '20%'; // Giá trị mặc định nếu không có dữ liệu
+            bar.style.height = '20%';
             const tooltip = bar.querySelector('.tooltip');
             if (tooltip) {
                 tooltip.textContent = '';
@@ -101,7 +145,6 @@ function updateChart(data) {
         }
     });
 
-    // Cập nhật giá trị trung bình và tổng nếu có
     const avgValue = document.querySelector('.summary .avg .value');
     const totalValue = document.querySelector('.summary .total .value');
     if (data.weeklyAvg) {

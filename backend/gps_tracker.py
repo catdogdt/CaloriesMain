@@ -25,7 +25,7 @@ def haversine(lat1, lon1, lat2, lon2):
     a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-    return R * c * 1000   # meters
+    return R * c *1000 # metres
 
 def parse_nmea_gprmc(nmea_sentence):
     parts = nmea_sentence.split(",")

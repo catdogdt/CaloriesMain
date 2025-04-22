@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
 * {
@@ -83,7 +82,7 @@ p {
 #showLoginPopup {
     padding: 1rem 2rem;
     font-size: 1rem;
-    background-color: #162938; 
+    background-color: #162938;
     border: none;
     border-radius: 8px;
     margin-top: 1rem;
@@ -122,13 +121,9 @@ header {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0);
-    /* width: auto;
-    height: auto; */
-    width: 400px;
-    height: 440px;
-    /* background: transparent; */
+    width: 400px; /* Kích thước mặc định cho login */
+    height: 440px; /* Kích thước mặc định cho login */
     background-color: #ffffffe6;
-    /* border: 2px solid rgba(255, 255, 255, .5); */
     border-radius: 20px;
     backdrop-filter: blur(20px);
     box-shadow: 0 0 30px rgba(0, 0, 0, .5);
@@ -137,21 +132,22 @@ header {
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    overflow: hidden;   
+    overflow: hidden;
     transition: transform .5s ease, height .2s ease;
 }
 
 .wrapper.active-popup {
     transform: translate(-50%, -50%) scale(1);
-
 }
 
 .wrapper.active {
-    width: 500px;
-    height: 550px;
-    /* padding-left: 50px; */
-    /* padding-right: 50px; */
-    /* height: auto; */
+    width: 500px; /* Kích thước khi hiển thị form register */
+    height: 550px; /* Kích thước khi hiển thị form register */
+}
+
+.wrapper.active-forgot-password {
+    width: 500px; /* Kích thước khi hiển thị form forgot-password */
+    height: 550px; /* Kích thước khi hiển thị form forgot-password */
 }
 
 .wrapper .form-box {
@@ -169,15 +165,32 @@ header {
     transform: translateX(-800px);
 }
 
+.wrapper.active-forgot-password .form-box.login {
+    transition: none;
+    transform: translateX(-800px); /* Ẩn form login khi forgot password hiện */
+}
+
 .wrapper .form-box.register {
     position: absolute;
     transition: none;
     transform: translateX(400px);
+    width: 100%;
+    height: auto;
+    padding: 40px; /* Giữ padding giống forgot password */
+    /* margin: 40px; */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .wrapper.active .form-box.register {
     transition: transform .18s ease;
     transform: translateX(0);
+}
+
+.wrapper.active-forgot-password .form-box.register {
+    transition: none;
+    transform: translateX(-800px); /* Ẩn form register khi forgot password hiện */
 }
 
 .wrapper .icon-close {
@@ -202,16 +215,16 @@ header {
     color: #162938;
     text-align: center;
 }
-/*  */
-.form-box.register {
-    width: 100%;
-    padding: 50px; /* Điều chỉnh padding nếu cần */
+/* */
+.form-box.register h2 {
+    margin-top: 0; /* Loại bỏ margin-top thừa */
 }
 
 .two-column {
     display: flex;
     gap: 35px;
     /* justify-content: space-around; */
+    /* padding: 80px; */
 }
 
 .column {
@@ -219,7 +232,7 @@ header {
 }
 
 .form-box.register .input-box {
-    margin: 35px 0; /* Điều chỉnh margin giữa các input box nếu cần */
+    margin: 35px 0; /* Giảm margin giữa các input box */
 }
 
 .form-box.register .remember-forgot {
@@ -230,12 +243,8 @@ header {
     margin-top: 15px; /* Điều chỉnh margin cho liên kết login */
 }
 
-.form-box.register h2 {
-    margin-top: 15px;
-}
-
 .form-box.register .two-column {
-    margin-bottom: 20px;
+    margin-bottom: 10px; /* Giảm margin bottom */
 }
 
 .form-box.register .column .input-box {
@@ -284,7 +293,7 @@ header {
     position: absolute;
     right: 8px;
     font-size: 1.2em;
-    color: #162938; 
+    color: #162938;
     line-height: 57px;
 }
 
@@ -344,4 +353,31 @@ header {
 
 .login-register p a:hover {
     text-decoration: underline;
+}
+
+.wrapper .form-box.forgot-password {
+    position: absolute;
+    transition: none;
+    transform: translateX(800px); /* Ẩn nó ở bên phải */
+    width: 100%;
+    height: auto;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.wrapper.active-forgot-password .form-box.forgot-password {
+    transition: transform .18s ease;
+    transform: translateX(0);
+}
+
+.wrapper.active-forgot-password .form-box.login {
+    transition: none;
+    transform: translateX(-800px); /* Ẩn form login khi forgot password hiện */
+}
+
+.wrapper.active-forgot-password .form-box.register {
+    transition: none;
+    transform: translateX(-800px); /* Ẩn form register khi forgot password hiện */
 }

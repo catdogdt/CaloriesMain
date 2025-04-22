@@ -7,6 +7,7 @@
     <title> Tracking </title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tracking.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script> 
 </head>
 <body>  
     <header>
@@ -44,12 +45,18 @@
                         <div class="data-item"><i class="fas fa-shoe-prints"></i> <span class="label">Distance:</span> <span class="value" id="current-distance">0 km</span></div>
                     </div>
                 </div>
-                </section>
+            </section>
+        </div>
+        
+        <div id="congrats-container" class="congrats-message">
+            <p>🎉 Congratulations 🎉</p>
+            <p>You reached your goal!</p>
+            <button id="close-congrats" onclick="closeCongrats()">OK</button>
         </div>
     </div>
-
     <script src="{{ url_for('static', filename='js/tracking.js') }}"></script>
-    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+
 </body>
 </html>

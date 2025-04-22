@@ -1,3 +1,9 @@
+let trackingInterval;
+let startTime;
+let congratsShownThisSession = false;
+let jsConfetti = null;
+// let congratsContainer; // Khai báo ở phạm vi toàn cục
+
 document.addEventListener('DOMContentLoaded', () => {
     const startButton = document.querySelector('.track-button');
     const endButton = document.querySelector('.end-button');
@@ -5,8 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const caloriesDisplay = document.getElementById('current-calories');
     const distanceDisplay = document.getElementById('current-distance');
     const timeDisplay = document.getElementById('current-time');
-    let trackingInterval;
-    let startTime;
+    congratsContainer = document.getElementById('congrats-container');
+    const jsConfetti = new JSConfetti();
+    console.log('jsConfetti instance:', jsConfetti);
 
     async function startTracking() {
         const ipAddress = ipAddressInput.value.trim();
@@ -37,25 +44,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.ok) {
-                startButton.innerHTML = '<i class="fas fa-check-circle"></i> Tracking Started';
-                startButton.style.backgroundColor = '#28a745';
-                startButton.style.color = 'white';
-                trackingInterval = setInterval(fetchTrackingData, 3000); // Cập nhật mỗi 3 giây
+                const responseData = await response.json();
+                if (responseData.status === 'success') { // Kiểm tra trạng thái thành công từ máy chủ
+                    startButton.innerHTML = '<i class="fas fa-check-circle"></i> Tracking Started';
+                    startButton.style.backgroundColor = '#28a745';
+                    startButton.style.color = 'white';
+                    trackingInterval = setInterval(fetchTrackingData, 3000); // Bắt đầu polling dữ liệu
+                } else {
+                    alert(`Error starting tracking: ${responseData.message || 'Failed to start tracking.'}`);
+                    resetStartButton();
+                }
             } else {
                 const errorData = await response.json();
-                alert(`Error starting tracking: ${errorData.error || 'Something went wrong'}`);
-                startButton.innerHTML = '<i class="fas fa-play"></i> Start Tracking';
-                startButton.style.backgroundColor = '';
-                startButton.style.color = '';
-                startButton.disabled = false;
+                alert(`Error starting tracking: ${errorData.error || 'Something went wrong with the request.'}`);
+                resetStartButton();
             }
         } catch (error) {
             console.error('Error starting tracking:', error);
             alert('Failed to connect to the server.');
-            startButton.innerHTML = '<i class="fas fa-play"></i> Start Tracking';
-            startButton.style.backgroundColor = '';
-            startButton.style.color = '';
-            startButton.disabled = false;
+            resetStartButton();
         }
     }
 
@@ -64,8 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/get_tracking_data');
             if (response.ok) {
                 const data = await response.json();
-                caloriesDisplay.textContent = `${data.calories.toFixed(2)} kcal`;
-                distanceDisplay.textContent = `${(data.distance / 1000).toFixed(2)} km`;
+                caloriesDisplay.textContent = `${parseFloat(data.calories).toFixed(2)} kcal`;
+                distanceDisplay.textContent = `${parseFloat(data.distance/1000).toFixed(2)} km`;
 
                 const currentTime = new Date();
                 const elapsedTime = Math.floor((currentTime - startTime) / 1000);
@@ -74,6 +81,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 const seconds = elapsedTime % 60;
                 timeDisplay.textContent = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
+                const currentSessionCalories = parseFloat(data.calories);
+                const caloriesCurrentday = parseFloat(data.currentCalories);
+                const targetCalories = parseFloat(data.targetCalories);
+                const congratsShownToday = data.congratsShownToday; // Lấy trạng thái đã hiển thị trong ngày từ backend
+
+                console.log('totalCaloriesBurned:', currentSessionCalories + caloriesCurrentday);
+                console.log('targetCalories:', targetCalories);
+                console.log('congratsShownToday (backend):', congratsShownToday);
+                console.log('congratsShownThisSession (frontend):', congratsShownThisSession);
+
+                if ((currentSessionCalories + caloriesCurrentday) >= targetCalories && !congratsShownToday && !congratsShownThisSession) {
+                    congratsContainer.classList.add('active');
+                    console.log('Giá trị của jsConfetti trước khi shoot:', jsConfetti); // Thêm dòng này
+                    jsConfetti.addConfetti();
+                    // if (jsConfetti && typeof jsConfetti.shoot === 'function') { // Kiểm tra jsConfetti và phương thức shoot
+                    //     console.log('Shooting confetti!'); 
+                    //     jsConfetti.shoot(); }
+                    congratsShownThisSession = true; // Đánh dấu đã hiển thị trong phiên này
+                    console.log('Giá trị của jsConfetti sau khi shoot:', jsConfetti.shoot); // Thêm dòng này
+
+                    // Gửi request lên backend để cập nhật congratsShownDate
+                    fetch('/api/mark_congrats_shown', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({})
+                    });
+                }
             } else {
                 console.error('Failed to fetch tracking data.');
             }
@@ -81,43 +117,61 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error fetching tracking data:', error);
         }
     }
-
+    
     function endTracking() {
         if (confirm('Are you sure you want to end the tracking session?')) {
-            clearInterval(trackingInterval);
-            startButton.innerHTML = '<i class="fas fa-play"></i> Start Tracking';
-            startButton.style.backgroundColor = '';
-            startButton.style.color = '';
-            startButton.disabled = false;
-            caloriesDisplay.textContent = '0 kcal';
-            distanceDisplay.textContent = '0 km';
-            timeDisplay.textContent = '0:00:00';
-            alert('Tracking session ended.');
-            // Nếu cần, bạn có thể gọi một API ở đây để báo cho backend dừng tracking
-            // Ví dụ:
-            // fetch('/api/end_tracking', { method: 'POST' });
+         clearInterval(trackingInterval);
+         resetStartButton();
+         const currentCaloriesStr = caloriesDisplay.textContent;
+         const caloriesBurned = parseFloat(currentCaloriesStr.replace(' kcal', ''));
+      
+         caloriesDisplay.textContent = '0 kcal';
+         distanceDisplay.textContent = '0 km';
+         timeDisplay.textContent = '0:00:00';   
+         alert('Tracking session ended.');
+      
+         // Gửi lượng calories đã đốt lên backend
+         fetch('/api/update_calories', {
+          method: 'POST',
+          headers: {
+           'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ caloriesBurned: caloriesBurned }),
+         })
+          .then(response => {
+           if (response.ok) {
+            console.log('Calories updated successfully on the server.');
+           } else {
+            console.error('Failed to update calories on the server.');
+           }
+          })
+          .catch(error => {
+           console.error('Error sending update calories request:', error);
+          });
         }
     }
 
-    // Gắn các hàm vào window để có thể gọi từ thuộc tính 'onclick' trong HTML
-    window.startTracking = startTracking;
-    window.endTracking = endTracking;
+    function resetStartButton() {
+        startButton.innerHTML = '<i class="fas fa-play"></i> Start Tracking';
+        startButton.style.backgroundColor = '';
+        startButton.style.color = '';
+        startButton.disabled = false;
+    }
 
     const logoutButton = document.querySelector('.btnLogin-popup');
     if (logoutButton) {
         logoutButton.addEventListener('click', async () => {
             try {
-                const response = await fetch('/auth/logout', { // Đường dẫn API đăng xuất (sẽ được định nghĩa ở backend)
+                const response = await fetch('/auth/logout', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({}), // Có thể không cần body, tùy thuộc vào backend
+                    body: JSON.stringify({}),
                 });
 
                 if (response.ok) {
-                    // Đăng xuất thành công, chuyển hướng về trang đăng nhập
-                    window.location.href = '/'; // Hoặc '/login' tùy thuộc vào route của firstpage.html
+                    window.location.href = '/'; // Chuyển hướng về firstpage.html
                 } else {
                     const errorData = await response.json();
                     alert(`Logout failed: ${errorData.error || 'Something went wrong'}`);
@@ -128,5 +182,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Logout error:', error);
             }
         });
+    }
+    // Gắn các hàm vào window để có thể gọi từ thuộc tính 'onclick' trong HTML
+    window.startTracking = startTracking;
+    window.endTracking = endTracking;
+    // window.closeCongrats = closeCongrats;
+
+    window.closeCongrats = () => {
+        const congratsMessage = document.getElementById('congrats-container');
+        congratsMessage.classList.remove('active');
+        document.querySelectorAll('.confetti').forEach(c => c.remove());
+
+        // Gọi API để cập nhật congratsShownDate khi người dùng đóng thông báo
+        fetch('/api/mark_congrats_shown', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        });
+    };
+
+     // Khởi động interval để lấy dữ liệu (nếu tracking đã bắt đầu)
+    const isTrackingActive = document.querySelector('.track-button').innerHTML.includes('Tracking Started');
+    if (isTrackingActive) {
+        startTime = new Date(); // Cần đảm bảo startTime được thiết lập khi bắt đầu tracking
+        trackingInterval = setInterval(fetchTrackingData, 3000);
     }
 });
