@@ -21,7 +21,7 @@
         <div class="profile-section" id="profileSection">
             <div class="left-section">
                 <div class="calorie-icon">
-                    <img src="{{ url_for('static', filename='img/fire_icon.png') }}" alt="Fire icon">
+                    <img class = "fire-icon" src="{{ url_for('static', filename='img/fire_icon.png') }}" alt="Fire icon">
                     <div class="calorie-number" id="currentBurnedCalories">{{ user.goal }}</div>                
                 </div>
                 <div class="target-info">
@@ -48,7 +48,7 @@
                         <strong id="totalMin">0</strong>
                     </div>
                 </div>
-                <img src="{{ url_for('static', filename='img/runner.png') }}" alt="Runner">
+                <img class = "runner-image" src="{{ url_for('static', filename='img/runner.png') }}" alt="Runner" >
             </div>
         </div>
 

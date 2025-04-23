@@ -17,6 +17,8 @@ body {
     background-size: cover; /* Phủ toàn bộ vùng chứa */
     background-position: center center; /* Căn giữa hình ảnh */
     background-attachment: fixed; /* Giữ hình ảnh cố định khi cuộn */
+    overflow: hidden;
+
 }
 
 .overlay {

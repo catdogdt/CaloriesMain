@@ -20,6 +20,7 @@ body {
     background-size: cover;
     background-position: center;
     /* background: #abbac6; */
+    overflow: hidden;
 }
 
 header {
@@ -116,9 +117,17 @@ header {
     justify-content: space-around; /* Hoặc space-between tùy vào hiệu ứng bạn muốn */
     align-items: flex-start; /* Hoặc center tùy theo cách bạn muốn căn chỉnh theo chiều dọc */
     width: 80%; /* Điều chỉnh độ rộng của main-content nếu cần */
-    margin: 80px auto 10px auto; /* Căn giữa theo chiều ngang và tạo khoảng cách trên dưới */
-    padding: 20px; /* Thêm padding nếu muốn có khoảng trắng bên trong main-content */
+    /* margin: 80px auto;  */
+    /* Căn giữa theo chiều ngang và tạo khoảng cách trên dưới */
+    
+    /* margin-top: 150px; */
+    /* padding: 20px;  */
+    /* Thêm padding nếu muốn có khoảng trắng bên trong main-content */
+    padding-left: 60px;
+    padding-right: 60px;
+    padding-top: 150px;
     box-sizing: border-box;
+    height: calc(100vh);  
 }
 
 .profile-section {
@@ -126,6 +135,7 @@ header {
     justify-content: space-around;
     align-items: flex-start;
     width: 100%;
+    height: 100%;
     box-sizing: border-box;
 }
 
@@ -148,7 +158,7 @@ header {
 
 .calorie-icon img {
     display: block;
-    width: 100%;
+    width: 120%;
     height: auto;
     transform: translateY(-17px);
 }
@@ -208,15 +218,24 @@ header {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    justify-content: space-between;
+    height: 100%;
 }
 
 .runner-image {
-    max-width: 600px;
+    /* width: 300px; */
+    /* height: 300px; */
+    /* height: auto; */
+    width: 590px;
     height: auto;
-    position: fixed;
+    /* position: fixed; */
     bottom: 0; /* Đặt cạnh dưới của hình ảnh chạm đáy viewport */
-    right: 100px; /* Đặt cạnh phải của hình ảnh chạm cạnh phải viewport */
+    /* right: 100px;  */
+    /* margin-left: 100px; */
+    /* Đặt cạnh phải của hình ảnh chạm cạnh phải viewport */
     z-index: -1;
+    transform: translateX(150px);
+    /* transform: scale(1.2); */
 }
 
 .info-container {
