@@ -26,12 +26,12 @@
             <div class="summary">
                 <div class="avg">
                     <div class="date-range">Apr 13 - Apr 19</div>
-                    <div class="value">0.0</div>
+                    <div class="value">{{ avg }}</div>
                     <div class="label">Avg</div>
                 </div>
                 <div class="total">
                     <div class="value">0.0</div>
-                    <div class="label">Total</div>
+                    <div class="label">{{ total }}</div>
                 </div>
             </div>
             <div class="chart-container">
@@ -43,30 +43,26 @@
                     <span>1000</span>
                 </div>
                 <div class="chart">
-                    <div class="bar orange" style="height: 66.6%;" data-day="S">
-                        <div class="star">⭐</div>
-                    </div>
-                    <div class="bar gray" style="height: 33.3%;" data-day="M"></div>
-                    <div class="bar gray" style="height: 44.4%;" data-day="T"></div>
-                    <div class="bar green new-record" style="height: 80%;" data-day="W">
-                        <div class="star">⭐</div>
-                        <div class="tooltip">
-                            New record!<br>350 Kcal<br>Apr 16 2025
+                    {% for day, calories in weekly_data.items() %}
+                        {% set height = (calories / max_calories * 100) if max_calories else 0 %}
+                        <div class="bar {% if calories == max_calories %}green new-record{% else %}gray{% endif %}" 
+                             style="height: {{ height }}%;" 
+                             data-day="{{ day[0] }}">
+                            {% if calories == max_calories %}
+                                <div class="star">⭐</div>
+                                <div class="tooltip">
+                                    New record!<br>{{ calories }} Kcal<br>{{ day }}
+                                </div>
+                            {% endif %}
                         </div>
-                    </div>
-                    <div class="bar gray" style="height: 22.2%;" data-day="T"></div>
-                    <div class="bar gray" style="height: 44.4%;" data-day="F"></div>
-                    <div class="bar gray" style="height: 11.1%;" data-day="S"></div>
+                    {% endfor %}
+                
                     <div class="x-axis">
-                        <span>S</span>
-                        <span>M</span>
-                        <span>T</span>
-                        <span>W</span>
-                        <span>T</span>
-                        <span>F</span>
-                        <span>S</span>
+                        {% for day in weekly_data.keys() %}
+                            <span>{{ day[0] }}</span>
+                        {% endfor %}
                     </div>
-                    
+                
                     <div class="target-line"></div>
                 </div>
             </div>

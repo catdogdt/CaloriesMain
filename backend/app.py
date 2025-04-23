@@ -1,10 +1,10 @@
-# app.py
 from flask import Flask, request, jsonify, render_template, session, redirect
 from flask_cors import CORS
 from auth import auth
 from gps_tracker import start_gps_tracking, get_tracking_data, is_connected
 from threading import Thread
 import sqlite3
+import os
 import socket
 import time  # Import thư viện time
 import datetime
@@ -49,6 +49,12 @@ def reset_daily_calories():
             db.close()
             print("🔄 Daily calories reset at midnight.")
 
+def get_db_connection():
+    db_path = os.path.join(os.path.dirname(__file__), 'database.db')
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
 # Initialize the scheduler
 scheduler = BackgroundScheduler()
 scheduler.add_job(reset_daily_calories, 'cron', hour=0, minute=0)
@@ -77,10 +83,46 @@ def tracking_page():
 
 @app.route('/progress')
 def progress_page():
-    if 'user_id' in session:
-        return render_template('progress.html')
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+
+    conn = get_db_connection()
+    user_data = conn.execute(
+        'SELECT * FROM weekly_calories WHERE user_id = ?',
+        (user_id,)
+    ).fetchone()
+    conn.close()
+
+    # If user_data is None, create a default dictionary
+    if user_data is None:
+        weekly_data = {
+            'Monday': 0, 'Tuesday': 0, 'Wednesday': 0, 'Thursday': 0,
+            'Friday': 0, 'Saturday': 0, 'Sunday': 0
+        }
     else:
-        return redirect('/login')
+        weekly_data = {
+            'Monday': user_data['monday'],
+            'Tuesday': user_data['tuesday'],
+            'Wednesday': user_data['wednesday'],
+            'Thursday': user_data['thursday'],
+            'Friday': user_data['friday'],
+            'Saturday': user_data['saturday'],
+            'Sunday': user_data['sunday'],
+        }
+
+    max_calories = max(weekly_data.values()) if weekly_data else 1
+    total = sum(weekly_data.values())
+    avg = round(total / 7, 1)
+
+    return render_template(
+        'progress.html',
+        weekly_data=weekly_data,
+        max_calories=max_calories,
+        total=total,
+        avg=avg
+    )
 
 @app.route('/profile')
 def profile_page():
