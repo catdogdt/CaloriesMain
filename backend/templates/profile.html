@@ -6,7 +6,7 @@
     <title>Profile & Update Target</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
 </head>
-<body style="background-image: url('{{ url_for('static', filename='img/background.png') }}'); background-repeat: no-repeat; background-size: cover; background-position: center center; background-attachment: fixed;">
+<body>
     <header>
         <h2 class = "logo"> Calories </h2>
         <nav class = "navigation">
@@ -21,15 +21,15 @@
         <div class="profile-section" id="profileSection">
             <div class="left-section">
                 <div class="calorie-icon">
-                    <img src="{{ url_for('static', filename='img/fire_icon.png') }}" alt="Biểu tượng Lửa">
-                    <div class="calorie-number" id="currentBurnedCalories">100</div>
+                    <img src="{{ url_for('static', filename='img/fire_icon.png') }}" alt="Fire icon">
+                    <div class="calorie-number" id="currentBurnedCalories">{{ user.goal }}</div>                
                 </div>
                 <div class="target-info">
                     <div class="target-text">Target calories burned/day (kcal)</div>
-                    <div class="email-text">Keep it up example@gmail.com</div>
-                    <div class="bottom-buttons">
+                    <div class="email-text">Keep it up {{ user.email }}</div>                    
+                    <div class="bottom-button">
                         <button class="button" onclick="showUpdateTarget()">Update target</button>
-                        <button class="button">Change Password</button>
+                        <button class="button" onclick="showChangePasswordModal()">Change Password</button>
                     </div>
                 </div>
             </div>
@@ -48,31 +48,71 @@
                         <strong id="totalMin">0</strong>
                     </div>
                 </div>
-                <img src="{{ url_for('static', filename='img/runner.png') }}" alt="Runner" class="runner-image">
+                <img src="{{ url_for('static', filename='img/runner.png') }}" alt="Runner">
             </div>
         </div>
 
-        <div class="update-target-section" id="updateTargetSection">
-            <div class="calorie-icon">
-                <img src="{{ url_for('static', filename='img/fire_icon.png') }}" alt="Biểu tượng Lửa">            
-            </div>
-            <div class="target-info">
-                <div class="target-text">Update target calories burned/day (kcal)</div>
-            </div>
-            <div class="calorie-info-text">
+    <div class="wrapper" id="updateTargetWrapper"> 
+        <span class="icon-close update-target-close"> 
+            <ion-icon name="close"></ion-icon>
+        </span>
+        <div class="form-box update-target"> 
+            
+            <h2> Update target calories burned/day (kcal) </h2> 
+
+            <div class="calorie-info-text" style="font-size: 0.9em; color: #555; margin-bottom: 25px; margin-top: 25px; line-height: 1.4; text-align: justify;">
                 Determining your daily calorie needs can help you reach your health goals. You burn calories daily when you move around, exercise, and do your daily tasks. Most female adults need 1,600–2,200 calories per day. Most male adults need 2,200–3,000 calories per day.
             </div>
-            <div class="input-container">
-                <label for="newCalorieTarget">Enter new target:</label>
-                <input type="number" id="newCalorieTarget" class="input-field">
+
+            <div class="input-box" style="margin: 25px 0;"> 
+                <span class="icon"> 
+                    <ion-icon name="flame"></ion-icon>
+                </span>
+                <input type="number" id="newCalorieTarget" required>
+                <label> New Target (kcal) </label>
             </div>
             <div class="bottom-buttons">
-                <button class="button" onclick="saveNewTarget()">Save</button>
-                <button class="button" onclick="hideUpdateTarget()">Cancel</button>
+                <button class="btn" onclick="saveNewTarget()">Save</button>
+                <button class="btn cancel-btn" onclick="hideUpdateTargetModal()">Cancel</button> 
             </div>
         </div>
     </div>
 
+    <div class="wrapper" id = "changePasswordWrapper">
+        <span class="icon-close change-password-close">
+            <ion-icon name="close"></ion-icon>
+        </span>
+        <div class="form-box change-password">
+            <h2> Change Password </h2>
+            <form action="{{ url_for('change_password') }}" method="POST">
+                <div class="input-box">
+                    <span class="icon">
+                        <ion-icon name="lock-closed"></ion-icon>
+                    </span>
+                    <input type="password" name="current_password" required>
+                    <label> Current password </label>
+                </div>
+                <div class="input-box">
+                    <span class="icon">
+                        <ion-icon name="lock-closed"></ion-icon>
+                    </span>
+                    <input type="password" name="new_password" required>
+                    <label> New password </label>
+                </div>
+                <div class="input-box">
+                    <span class="icon">
+                        <ion-icon name="lock-closed"></ion-icon>
+                    </span>
+                    <input type="password" name="confirm_new_password" required>
+                    <label> Confirm new password </label>
+                </div>
+                <button type="submit" class="btn"> Change Password </button>
+            </form>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
 </body>
 </html>

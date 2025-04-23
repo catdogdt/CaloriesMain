@@ -2,6 +2,7 @@
 - Python 3 or higher
 - Git 
 - Reactjs installed
+- apscheduler installed
 
 #### Installation
 ##### Step 1
