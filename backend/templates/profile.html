@@ -37,15 +37,15 @@
                 <div class="info-container">
                     <div class="info-box">
                         <div>Kcal</div>
-                        <strong id="totalKcal">0.0</strong>
+                        <strong id="totalKcal">{{ total_kcal }}</strong>
                     </div>
                     <div class="info-box">
                         <div>Km</div>
-                        <strong id="totalKm">0.00</strong>
+                        <strong id="totalKm">{{ total_km }}</strong>
                     </div>
                     <div class="info-box">
                         <div>Min</div>
-                        <strong id="totalMin">0</strong>
+                        <strong id="totalMin">{{ total_min }}</strong>
                     </div>
                 </div>
                 <img class = "runner-image" src="{{ url_for('static', filename='img/runner.png') }}" alt="Runner" >

@@ -88,7 +88,11 @@ def profile_page():
         user_id = session['user_id']
         user_data = get_user_info(user_id)
         if user_data:
-            return render_template('profile.html', user=user_data)
+            return render_template('profile.html',  
+                                   user=user_data,
+                                   total_kcal=user_data.get('totalKcal', 0.0),
+                                   total_km=user_data.get('totalKm', 0.00),
+                                   total_min=user_data.get('totalMin', 0))
         else:
             return render_template('profile.html', error="Could not load profile information.")
     else:
@@ -422,5 +426,46 @@ def change_password():
         conn.close()
         return jsonify({"error": f"Failed to update password: {e}"}), 500
     
+@app.route('/api/update_totals', methods=['POST'])
+def update_totals():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        data = request.get_json()
+        calories_burned = data.get('caloriesBurned', 0)
+        distance_travelled = data.get('distanceTravelled', 0)
+        time_tracked = data.get('timeTracked', 0)
+
+        conn = get_db()
+        cursor = conn.cursor()
+        try:
+            # Lấy giá trị hiện tại từ database
+            cursor.execute("SELECT totalKcal, totalKm, totalMin FROM users WHERE id = ?", (user_id,))
+            result = cursor.fetchone()
+
+            if result:
+                current_total_kcal = result['totalKcal'] if result['totalKcal'] is not None else 0.0
+                current_total_km = result['totalKm'] if result['totalKm'] is not None else 0.0
+                current_total_min = result['totalMin'] if result['totalMin'] is not None else 0
+
+                new_total_kcal = current_total_kcal + calories_burned
+                new_total_km = current_total_km + distance_travelled
+                new_total_min = current_total_min + time_tracked
+
+                # Cập nhật giá trị mới vào database
+                cursor.execute("UPDATE users SET totalKcal = ?, totalKm = ?, totalMin = ? WHERE id = ?",
+                               (new_total_kcal, new_total_km, new_total_min, user_id))
+                conn.commit()
+                conn.close()
+                return jsonify({'message': 'Totals updated successfully'}), 200
+            else:
+                conn.close()
+                return jsonify({'error': 'User not found'}), 404
+        except Exception as e:
+            conn.rollback()
+            conn.close()
+            return jsonify({'error': f'Failed to update totals: {e}'}), 500
+    else:
+        return jsonify({'error': 'User not logged in'}), 401
+
 if __name__ == "__main__":
     app.run(debug=True)
