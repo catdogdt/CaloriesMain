@@ -338,6 +338,18 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(connectionStatusInterval);
             connectionStatusInterval = null;
           
+            // Get current values before resetting
+            const currentCaloriesStr = caloriesDisplay.textContent;
+            const currentCalories = parseFloat(currentCaloriesStr.replace(' kcal', ''));
+
+            const currentDistanceStr = distanceDisplay.textContent;
+            const currentDistance = parseFloat(currentDistanceStr.replace(' km', ''));
+
+            const currentTimeStr = timeDisplay.textContent;
+            const timeParts = currentTimeStr.split(':');
+            const currentTotalSeconds = parseInt(timeParts[0]) * 3600 + parseInt(timeParts[1]) * 60 + parseInt(timeParts[2]);
+            const currentTotalMinutes = currentTotalSeconds / 60;
+            
             // Reset hiển thị
             caloriesDisplay.textContent = '0 kcal';
             distanceDisplay.textContent = '0 km';
@@ -356,20 +368,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Backend /api/update_calories cộng dồn giá trị nhận được
             // Nên gửi tổng calories đã đốt được trong phiên là hợp lý với logic backend hiện tại
             
-            // Get current values before resetting
-            const currentCaloriesStr = caloriesDisplay.textContent;
-            const currentCalories = parseFloat(currentCaloriesStr.replace(' kcal', ''));
-
-            const currentDistanceStr = distanceDisplay.textContent;
-            const currentDistance = parseFloat(currentDistanceStr.replace(' km', ''));
-
-            const currentTimeStr = timeDisplay.textContent;
-            const timeParts = currentTimeStr.split(':');
-            const currentTotalSeconds = parseInt(timeParts[0]) * 3600 + parseInt(timeParts[1]) * 60 + parseInt(timeParts[2]);
-            const currentTotalMinutes = currentTotalSeconds / 60;
+            
       
             
-            alert('Tracking session ended.');
             console.log('Dữ liệu gửi đi:', {
                 caloriesBurned: currentCalories,
                 distanceTravelled: currentDistance,
@@ -401,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }    
 
     }
-    }
+    
     function resetStartButton() {
         setButtonStateIdle(); // Đặt lại trạng thái nút về ban đầu
     }

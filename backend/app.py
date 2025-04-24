@@ -25,6 +25,7 @@ def get_db():
     print('>>> Connecting to DB:', DATABASE)
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL;") 
     return conn
 
 def get_user_info(user_id):
@@ -80,7 +81,7 @@ def progress_page():
 
     user_id = session['user_id']
 
-    conn = get_db_connection()
+    conn = get_db()
     user_data = conn.execute(
         'SELECT * FROM weekly_calories WHERE user_id = ?',
         (user_id,)
@@ -220,7 +221,7 @@ def check_connection():
         # Không tìm thấy tracker cho người dùng này
         return jsonify({"connected": False, "message": "No active tracking session found for this user."}), 404
 
-@app.route("/get_tracking_data", methods=["GET"])
+@app.route("/get_tracking_data", methods=["GET"])   
 def get_data():
     if 'user_id' not in session:
         return jsonify({"error": "User not logged in"}), 401
@@ -358,60 +359,14 @@ def get_daily_progress():
         return jsonify({"error": "User not logged in"}), 401
 
 
-@app.route("/api/update_calories", methods=["POST"])
-def update_calories():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        data = request.get_json()
-        calories_burned = data.get('caloriesBurned', 0) # Calories đốt được trong một khoảng thời gian nào đó
-
-        conn = get_db()
-        cursor = conn.cursor()
-        try:
-            # Lấy thông tin hinệ tại của người dùng
-            cursor.execute("SELECT caloriesCurrentday, numberOfDays, last_day_incremented FROM users WHERE id = ?", (user_id,))
-            result = cursor.fetchone()
-            if result is None:
-                conn.close()
-                return jsonify({"error": "User not found"}), 404
-            current_calories = result['caloriesCurrentday'] if result['caloriesCurrentday'] is not None else 0
-            number_of_days = result['numberOfDays'] if result['numberOfDays'] is not None else 0
-            last_incremented = result['last_day_incremented']
-
-            #Tính calories mới
-            new_calories = current_calories + calories_burned
-            cursor.execute("UPDATE users SET caloriesCurrentday = ? WHERE id = ?", (new_calories, user_id))
-            
-            #Chuẩn bị cập nhật số ngày hoạt động
-            today_str = datetime.date.today().isoformat()
-            update_day_count = False 
-            if new_calories > 0:
-                if last_incremented != today_str:
-                    number_of_days += 1
-                    cursor.execute("UPDATE users SET numberOfDays = ?, last_day_incremented = ? WHERE id = ?", (number_of_days, today_str, user_id))
-                # else:
-                #     # Đã tăng numberOfDays trong ngày hôm nay rồi
-            # elif new_calories == 0:
-            #     # Tùy chọn: reset last_day_incremented?
-
-            conn.commit()
-            conn.close()
-            return jsonify({"message": "Calories updated successfully"}), 200
-        except Exception as e:
-            conn.rollback()
-            conn.close()
-            return jsonify({"error": f"Failed to update calories: {e}"}), 500
-    else:
-        return jsonify({"error": "User not logged in"}), 401
-    
-    
 @app.route('/api/update_totals', methods=['POST'])
 def update_totals():
-    print('update_totals route called')
+    print('Endpoint hit')  # Add this line
     if 'user_id' in session:
+        print('User logged in')  # Add this line
         user_id = session['user_id']
         data = request.get_json()
-        print('Received data:', data)
+        print('Received data:', data)  # Existing debug line
         calories_burned_session = float(data.get('caloriesBurned', 0))
         distance_travelled = float(data.get('distanceTravelled', 0))
         time_tracked = float(data.get('timeTracked', 0))
@@ -431,17 +386,21 @@ def update_totals():
             # Lấy caloriesCurrentday, lastChangecalories, numberOfDays, last_day_incremented hiện tại
             cursor.execute("SELECT caloriesCurrentday, lastChangecalories, numberOfDays, last_day_incremented FROM users WHERE id = ?", (user_id,))
             result = cursor.fetchone()
+            
+            if result is None:
+                conn.close()
+                return jsonify({"error": "User not found"}), 404
             current_calories_day = result['caloriesCurrentday'] if result else 0
             last_change_calories = result['lastChangecalories']
             number_of_days = result['numberOfDays'] if result['numberOfDays'] is not None else 0
             last_day_incremented = result['last_day_incremented']
 
-            # Tính toán caloriesCurrentday mới
+            # Tính toán caloriesCurrentday mới  
             new_calories_day = current_calories_day + calories_burned_session
 
             # Lấy ngày hiện tại
             today_str = datetime.date.today().isoformat()
-
+            print("Skibidi ahhhhh",new_calories_day, today_str)
             # Cập nhật lastChangecalories
             cursor.execute("UPDATE users SET lastChangecalories = ? WHERE id = ?", (today_str, user_id))
 
@@ -463,6 +422,6 @@ def update_totals():
             return jsonify({'error': f'Failed to update totals: {e}'}), 500
     else:
         return jsonify({'error': 'User not logged in'}), 401
-
+    
 if __name__ == "__main__":
     app.run(debug=True)
