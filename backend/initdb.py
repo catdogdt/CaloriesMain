@@ -10,15 +10,15 @@ def init_db():
     c.execute('''
         CREATE TABLE IF NOT EXISTS weekly_calories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            monday REAL DEFAULT 0,
-            tuesday REAL DEFAULT 0,
-            wednesday REAL DEFAULT 0,
-            thursday REAL DEFAULT 0,
-            friday REAL DEFAULT 0,
-            saturday REAL DEFAULT 0,
-            sunday REAL DEFAULT 0,
-            FOREIGN KEY (user_id) REFERENCES users(id)
+            email TEXT UNIQUE NOT NULL,
+            Monday REAL DEFAULT 0,
+            Tuesday REAL DEFAULT 0,
+            Wednesday REAL DEFAULT 0,
+            Thursday REAL DEFAULT 0,
+            Friday REAL DEFAULT 0,
+            Saturday REAL DEFAULT 0,
+            Sunday REAL DEFAULT 0,
+            FOREIGN KEY (email) REFERENCES users(email)
         )
     ''')
 

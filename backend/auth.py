@@ -46,23 +46,6 @@ def get_db():
 
 def generate_otp():
     return str(random.randint(100000, 999999))
-
-# @auth.route("/send-otp-email", methods=["POST"]) # Ví dụ route gửi email (cần cấu hình Flask-Mail)
-# def send_otp_email():
-#     data = request.json
-#     email = data.get("email")
-#     otp = data.get("otp")
-#     if not email or not otp:
-#         return jsonify({"error": "Missing email or OTP"}), 400
-#     msg = Message('Your Password Reset OTP', sender='your_email@example.com', recipients=[email])
-#     msg.body = f"Your OTP for password reset is: {otp}. This OTP will expire in 5 minutes."
-#     try:
-#         mail.send(msg)
-#         return jsonify({"message": "OTP sent successfully"}), 200
-#     except Exception as e:
-#         print(f"Error sending email: {e}")
-#         return jsonify({"error": "Failed to send OTP email"}), 500
-
 # Forgot password endpoint
 @auth.route("/forgot-password", methods=["POST"])
 def forgot_password():
@@ -145,7 +128,9 @@ def register():
     try:
         conn = get_db()
         cursor = conn.cursor()
+        # Insert user into the database users table
         cursor.execute("INSERT INTO users (email, password, targetCaloriesburned) VALUES (?, ?, ?)", (email, hashed_password, target_calories_burned)) # ĐÃ SỬA TÊN CỘT
+        cursor.execute("INSERT INTO weekly_calories (email) VALUES (?)", (email,))
         conn.commit()
         conn.close()
         return jsonify({"message": "User registered successfully"}), 201

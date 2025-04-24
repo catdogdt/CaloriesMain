@@ -9,7 +9,7 @@
 <body>
     <header>
         <h2 class = "logo"> Calories </h2>
-        <nav class = "navigation"> cl
+        <nav class = "navigation"> 
             <a href = "{{ url_for('tracking_page') }}"> Tracking </a>
             <a href = "{{ url_for('progress_page') }}"> Progress </a>
             <a href = "{{ url_for('profile_page') }}"> Profile </a>
@@ -20,7 +20,7 @@
     
     <div class="main-container">
         <div class="calorie-tracker">
-            <div class="header">
+            <!-- <div class="header">
                 <h1>Calorie Tracking</h1>
             </div>
             <div class="summary">
@@ -68,7 +68,13 @@
             </div>
             <div class="navigation-buttons"> <button id="prevWeekBtn">&lt;</button>
                 <button id="nextWeekBtn">&gt;</button>
+            </div> -->
+            <div class="chart-container">
+                <button id="generateChart">Generate Progress Chart</button>
+                <br>
+                <img id="progressChart" src="" alt="Progress Chart" style="display: none; margin-top: 20px; max-width: 600px;">
             </div>
+            <script src="{{ url_for('static', filename='js/progress.js') }}"></script>
         </div>
         <!-- ----------------------------------------- -->
         <div class="right-section">
