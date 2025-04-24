@@ -7,6 +7,8 @@ import sqlite3
 import time  # Import thư viện time
 import datetime
 import os
+from werkzeug.security import check_password_hash, generate_password_hash
+
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -422,6 +424,67 @@ def update_totals():
             return jsonify({'error': f'Failed to update totals: {e}'}), 500
     else:
         return jsonify({'error': 'User not logged in'}), 401
+    
+@app.route("/api/update_target_calories", methods=["POST"])
+def update_target_calories():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        data = request.get_json()
+        new_target = data.get('newTarget')
+
+        if new_target is None or not isinstance(new_target, int) or new_target <= 0:
+            return jsonify({"error": "Invalid target calorie value"}), 400
+
+        conn = get_db()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("UPDATE users SET targetCaloriesburned = ? WHERE id = ?", (new_target, user_id))
+            conn.commit()
+            conn.close()
+            return jsonify({"message": "Target calories updated successfully"}), 200
+        except Exception as e:
+            conn.rollback()
+            conn.close()
+            return jsonify({"error": f"Failed to update target calories: {e}"}), 500
+    else:
+        return jsonify({"error": "User not logged in"}), 401
+
+@app.route('/change_password', methods=['POST'])
+def change_password():
+    if 'user_id' not in session:
+        return jsonify({"error": "User not logged in"}), 401
+
+    user_id = session['user_id']
+    data = request.get_json()
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+    confirm_new_password = data.get('confirm_new_password')
+
+    if not current_password or not new_password or not confirm_new_password:
+        return jsonify({"error": "Missing password fields"}), 400
+
+    if new_password != confirm_new_password:
+        return jsonify({"error": "New passwords do not match"}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT password FROM users WHERE id = ?", (user_id,))
+    user_data = cursor.fetchone()
+
+    if not user_data or not check_password_hash(user_data['password'], current_password):
+        conn.close()
+        return jsonify({"error": "Incorrect current password"}), 401
+
+    hashed_new_password = generate_password_hash(new_password)
+    try:
+        cursor.execute("UPDATE users SET password = ? WHERE id = ?", (hashed_new_password, user_id))
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "Password updated successfully"}), 200
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return jsonify({"error": f"Failed to update password: {e}"}), 500
     
 if __name__ == "__main__":
     app.run(debug=True)

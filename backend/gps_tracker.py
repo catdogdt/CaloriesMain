@@ -154,7 +154,6 @@ class GPSTracker:
         self.set_connection_status(False) # Đặt False khi vòng lặp dừng hẳn
         self._close_socket()
 
-
     def _close_socket(self):
         if self._socket:
             print(f"[{datetime.datetime.now().strftime('%H:%M:%S.%f')}] Closing socket for {self.iphone_ip}")
@@ -168,7 +167,7 @@ class GPSTracker:
     def stop(self):
         print(f"[{datetime.datetime.now().strftime('%H:%M:%S.%f')}] Stopping tracker for {self.iphone_ip} requested.")
         self._running = False # Đặt cờ running là False để dừng vòng lặp
-        # Tắt socket có thể giúp thoát vòng lặp blocking recv()
+        self._socket_close()# Tắt socket có thể giúp thoát vòng lặp blocking recv()
 
     def is_connected(self):
         with self._lock:

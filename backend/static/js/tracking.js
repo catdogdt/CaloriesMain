@@ -401,6 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }    
 
+        stop_user_tracker(); // Gọi hàm dừng tracker frontend
     }
     
     function resetStartButton() {
