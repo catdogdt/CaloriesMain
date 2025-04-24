@@ -201,6 +201,22 @@ header {
     background-color: #0056b3;
 }
 
+.track-button.failed {
+    background-color: #FFA500; /* Màu cam giống nút End Session */
+    color: white;
+    border-color: #FFA500; /* Đảm bảo border cũng màu cam nếu có */
+  }
+  
+  .track-button.failed:hover {
+    background-color: #FF8C00; /* Màu cam đậm hơn khi hover */
+    border-color: #FF8C00;
+  }
+  
+  /* Có thể thêm style cho icon nếu muốn */
+  .track-button.failed i {
+     margin-right: 0.5rem; /* Giữ khoảng cách icon như cũ */
+  }
+  
 .work-details {
     display: flex;
     flex-wrap: wrap;

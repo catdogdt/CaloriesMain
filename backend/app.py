@@ -2,23 +2,25 @@
 from flask import Flask, request, jsonify, render_template, session, redirect
 from flask_cors import CORS
 from auth import auth
-from gps_tracker import start_gps_tracking, get_tracking_data, is_connected
+from gps_tracker import GPSTracker
 from threading import Thread
 import sqlite3
-import socket
+#import socket #Không cần socket nữa vì có trong gps_tracker.py
 import time  # Import thư viện time
 import datetime
+import os
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
-import os
+
 DATABASE = os.path.abspath('database.db')
 
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.register_blueprint(auth, url_prefix="/auth")
 
-user_ips = {}
-tracking_threads = {}
+#user_ips = {} # Không cần dictionary này nữa, IP sẽ được lưu trong đối tượng GPSTracker
+#tracking_threads = {} # Không cần dictionary này nữa, thread sẽ được quản lý cùng với tracker instance
+active_trackers = {} # Lưu trữ các đối tượng GPSTracker đang hoạt động, khoá bằng user_id
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
@@ -35,6 +37,21 @@ def get_user_info(user_id):
         return dict(user)
     else:
         return None
+    
+# Hàm trợ giúp lấy tracker của user
+def get_user_tracker():
+    user_id = session.get('user_id')
+    if user_id in active_trackers:
+        return active_trackers[user_id]
+    return None
+
+# Hàm trợ giúp để dừng tracker của user (khi đăng xuất hoặc đăng ký IP mới)
+def stop_user_tracker():
+    user_id = session.get('user_id')
+    if user_id in active_trackers:
+        tracker = active_trackers.pop(user_id) # Lấy và xóa tracker khỏi dictionary
+        tracker.stop()  # Dừng theo dõi GPS
+        print(f"Stopped tracking for user {user_id}")
 
 # --- Routes for serving frontend ---
 @app.route('/')
@@ -82,55 +99,105 @@ def dashboard_page():
 # --- Backend API Routes ---
 @app.route("/register_ip", methods=["POST"])
 def register_ip():
+    # Phải đăng nhập để đăng ký IP
+    if 'user_id' not in session:
+        return jsonify({"error": "User not logged in"}), 401
+    
+    user_id = session['user_id']
     data = request.get_json()
     print("📩 Received Data:", data)
 
-    email = data.get("email")
+    
+    #email = data.get("email") # Email không cần thiết ở đây nếu đã dùng user_id
     iphone_ip = data.get("iphone_ip")
 
-    if not email:
-        return jsonify({"error": "Missing email"}), 400
+    #if not email: # Không cần thiết nữa vì đã có user_id
+    #    return jsonify({"error": "Missing email"}), 400
     if not iphone_ip:
         return jsonify({"error": "Missing iPhone IP"}), 400
 
-    user_ips[email] = iphone_ip
+    #user_ips[email] = iphone_ip # Không cần thiết nữa vì đã có user_id
+
+    # Dừng tracker cũ nếu có
+    if user_id in active_trackers:
+        print(f"Stopping existing tracker for user {user_id}...")
+        stop_user_tracker() #Sử dụng hàm trợ giúp dừng và xoá
+    
     try:
-        print(f"🚀 Starting GPS tracking for {iphone_ip}")
-        tracking_thread = Thread(target=start_gps_tracking, args=(iphone_ip,))
+        print(f"🚀 Starting GPS tracking for user {user_id} at IP {iphone_ip}")
+        # Tạo đối tượng GPSTracker mới và bắt đầu theo dõi
+        tracker = GPSTracker(iphone_ip)
+        #Lưu đối tượng tracker vào dictionary dùng user_id làm khóa
+        active_trackers[user_id] = tracker
+
+        # Tạo và chạy thread với phương thức run_tracking_loop của đối tượng tracker
+        tracking_thread = Thread(target=tracker.run_tracking_loop)
         tracking_thread.daemon = True
         tracking_thread.start()
 
-        time.sleep(3)  # Chờ 3 giây để xem kết nối có thành công không
-
-        if is_connected() and user_ips.get(email) == iphone_ip:
-            print("✅ GPS Tracking Started (after wait)")
-            return jsonify({"status": "success", "message": "GPS tracking started"}), 200
-        else:
-            print("❌ Failed to start GPS tracking (after wait)")
-            return jsonify({"status": "error", "message": "Không thể kết nối với thiết bị sau một khoảng thời gian. Hãy đảm bảo thiết bị đã bật và địa chỉ IP chính xác."}), 200
+        # Không cần time.sleep(3) ở đây vì đã có trong run_tracking_loop
+        # Phản hồi ngay lập tức báo đã khởi tạo quá trình theo dõi
+        return jsonify({"status": "success", "message": "GPS tracking initiation started. Check /connection_status for actual status."}), 200
 
     except Exception as e:
-        print(f"❌ Error Starting GPS Tracking: {e}")
+        print(f"❌ Error Starting GPS Tracking for user {user_id}: {e}")
+        # Đảm bảo xoá tracker nếu có lỗi xảy ra
+        if user_id in active_trackers:
+            del active_trackers[user_id]
         return jsonify({"status": "error", "message": f"Lỗi khi bắt đầu theo dõi GPS: {e}"}), 500
     
+@app.route("/connection_status", methods=["GET"])
+def check_connection():
+    # Phai đăng nhập để kiểm tra trạng thái kết nối
+    if 'user_id' not in session:
+        return jsonify({"error": "User not logged in"}), 401
+    
+    # Lấy đối tượng tracker của người dùng hiện tại
+    tracker = get_user_tracker()
+
+    if tracker:
+        # Gọi phương thức is_connected() của đối tượng tracker cụ thể
+        status = tracker.is_connected()
+        return jsonify({"connected": status}), 200
+    else:
+        # Không tìm thấy tracker cho người dùng này
+        return jsonify({"connected": False, "message": "No active tracking session found for this user."}), 404
 
 @app.route("/get_tracking_data", methods=["GET"])
 def get_data():
-    data = get_tracking_data()
-    if 'user_id' in session:
-        user_id = session['user_id']
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("SELECT caloriesCurrentday, targetCaloriesburned, congratsShownDate FROM users WHERE id = ?", (user_id,))
-        user_progress = cursor.fetchone()
-        conn.close()
-        if user_progress:
-            data['currentCalories'] = user_progress['caloriesCurrentday'] if user_progress['caloriesCurrentday'] is not None else 0
-            data['targetCalories'] = user_progress['targetCaloriesburned'] if user_progress['targetCaloriesburned'] is not None else 1
-            last_shown_date_str = user_progress['congratsShownDate']
-            today_str = datetime.date.today().isoformat()
-            data['congratsShownToday'] = (last_shown_date_str == today_str) if last_shown_date_str else False
-    return jsonify(data), 200
+    if 'user_id' not in session:
+        return jsonify({"error": "User not logged in"}), 401
+    
+    user_id = session['user_id']
+    tracker = get_user_tracker()
+
+    gps_data = {"calories": 0.0, "distance": 0.0} # Giá tri trị mặc định nếu không có tracker
+    if tracker:
+        # Lấy dữ liệu từ đối tượng tracker cụ thể
+        gps_data = tracker.get_tracking_data()
+
+    # Lấy thông tin người dùng từ database
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT caloriesCurrentday, targetCaloriesburned, congratsShownDate FROM users WHERE id = ?", (user_id,))
+    user_progress = cursor.fetchone()
+    conn.close()
+
+    combined_data = {
+        'calories': gps_data.get('calories', 0.0), # Lấy calories từ gps_data
+        'distance': gps_data.get('distance', 0.0), # Lấy distance từ gps_data
+        'currentCalories': 0,
+        'targetCalories': 1, # Đặt giá trị mặc định để tránh chia cho 0
+        'congratsShownToday': False
+    }
+
+    if user_progress:
+        combined_data['currentCalories'] = user_progress['caloriesCurrentday'] if user_progress['caloriesCurrentday'] is not None else 0
+        combined_data['targetCalories'] = user_progress['targetCaloriesburned'] if user_progress['targetCaloriesburned'] is not None else 1
+        last_shown_date_str = user_progress['congratsShownDate']
+        today_str = datetime.date.today().isoformat()
+        combined_data['congratsShownToday'] = (last_shown_date_str == today_str) if last_shown_date_str else False
+    return jsonify(combined_data), 200
 
 @app.route("/api/mark_congrats_shown", methods=["POST"])
 def mark_congrats_shown():
@@ -153,19 +220,30 @@ def mark_congrats_shown():
 
 @app.route("/get_calories", methods=["GET"])
 def get_total_calories():
-    tracking_data = get_tracking_data()
-    calories = tracking_data.get("calories", 0)
-    return jsonify({"calories": calories}), 200
+    # Route này giờ lấy calories từ tracker của user
+    if 'user_id' not in session:
+        return jsonify({"error": "User not logged in"}), 401
+    
+    tracker = get_user_tracker()
+    calories = 0.0
+    if tracker:
+        gps_data = tracker.get_tracking_data()
+        calories = gps_data.get('calories', 0.0)
 
-@app.route("/check-connection", methods=["GET"])
-def check_connection():
-    status = "Connected" if is_connected() else "Not Connected"
-    return jsonify({"status": status})
+    return jsonify({"calories": calories}), 200
 
 @app.route('/auth/logout', methods=['POST'])
 def logout():
+    # Dừng tracker của user khi đăng xuất
+    stop_user_tracker()
     session.pop('user_id', None)
     return jsonify({"message": "Logged out successfully"}), 200
+
+@app.route("/stop_tracker", methods=["POST"])
+def stop_tracker_route():
+    if 'user_id' not in session: return jsonify({"error": "Not logged in"}), 401
+    stop_user_tracker() # Gọi hàm stop tracker đã tạo ở app.py
+    return jsonify({"message": "Tracker stopped"}), 200
 
 @app.route("/api/progress_data", methods=["GET"])
 def get_progress_data():
@@ -306,11 +384,12 @@ def update_calories():
     if 'user_id' in session:
         user_id = session['user_id']
         data = request.get_json()
-        calories_burned = data.get('caloriesBurned', 0)
+        calories_burned = data.get('caloriesBurned', 0) # Calories đốt được trong một khoảng thời gian nào đó
 
         conn = get_db()
         cursor = conn.cursor()
         try:
+            # Lấy thông tin hinệ tại của người dùng
             cursor.execute("SELECT caloriesCurrentday, numberOfDays, last_day_incremented FROM users WHERE id = ?", (user_id,))
             result = cursor.fetchone()
             if result is None:
@@ -320,11 +399,13 @@ def update_calories():
             number_of_days = result['numberOfDays'] if result['numberOfDays'] is not None else 0
             last_incremented = result['last_day_incremented']
 
+            #Tính calories mới
             new_calories = current_calories + calories_burned
             cursor.execute("UPDATE users SET caloriesCurrentday = ? WHERE id = ?", (new_calories, user_id))
-
+            
+            #Chuẩn bị cập nhật số ngày hoạt động
             today_str = datetime.date.today().isoformat()
-
+            update_day_count = False 
             if new_calories > 0:
                 if last_incremented != today_str:
                     number_of_days += 1
