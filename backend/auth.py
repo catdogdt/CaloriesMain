@@ -6,6 +6,7 @@ import random
 import time
 #from flask_mail import Mail, Message  # Nếu bạn muốn gửi email thực sự
 import traceback  # Thêm import cho module traceback
+import datetime 
 
 auth = Blueprint('auth', __name__)
 
@@ -169,14 +170,28 @@ def login():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, password FROM users WHERE email = ?", (email,))
+    cursor.execute("SELECT id, password, lastChangecalories FROM users WHERE email = ?", (email,))    
     user = cursor.fetchone()
-    conn.close()
+    if user:
+        if check_password_hash(user['password'], password):
+            session['user_id'] = user['id']
+            today_str = datetime.date.today().isoformat() # lấy ngày hiện tại
 
-    if user and check_password_hash(user['password'], password):
-        session['user_id'] = user['id']
-        return jsonify({"message": "Login successful"}), 200
+            # Kiểm tra lastChangecalories và cập nhật caloriesCurrentday nếu cần
+            if user['lastChangecalories'] is None or user['lastChangecalories'] < today_str:
+                conn = get_db()
+                cursor = conn.cursor()
+                cursor.execute("UPDATE users SET caloriesCurrentday = 0")
+                conn.commit()
+                conn.close()
+                return jsonify({"message": "Logged in successfully, daily calories reset"}), 200
+            else:
+                return jsonify({"message": "Login successful"}), 200
+        else:
+            conn.close()
+            return jsonify({"error": "Invalid credentials"}), 401
     else:
+        conn.close()
         return jsonify({"error": "Invalid credentials"}), 401
     
 @auth.route('/logout', methods=['POST'])

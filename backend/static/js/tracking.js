@@ -330,58 +330,76 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function endTracking() {
         if (confirm('Are you sure you want to end the tracking session?')) {
-        //Dừng 2 interval
-        clearInterval(trackingInterval);
-        trackingInterval = null;
-        clearInterval(connectionStatusInterval);
-        connectionStatusInterval = null;
+            
+  
+            //Dừng 2 interval
+            clearInterval(trackingInterval);
+            trackingInterval = null;
+            clearInterval(connectionStatusInterval);
+            connectionStatusInterval = null;
+          
+            // Reset hiển thị
+            caloriesDisplay.textContent = '0 kcal';
+            distanceDisplay.textContent = '0 km';
+            timeDisplay.textContent = '0:00:00';
+            lastFetchedCalories = 0.0; // Reset biến lưu trữ
+            congratsShownThisSession = false; // Reset cờ hiển thị chúc mừng
+          
+           
+            startTime = null; // Đặt lại thời gian bắt đầu
 
-        // Lấy calories TỔNG đã đốt được trong phiên từ biến lưu trữ
-        // Thay vì lấy từ DOM, lấy từ biến lastFetchedCalories đáng tin cậy hơn
-        const caloriesBurned = lastFetchedCalories; // Sử dụng biến lưu trữ
+            resetStartButton(); // Đặt lại trạng thái nút về ban đầu    
+
+            alert('Tracking session ended.');
+          
+            // Gửi lượng calories đã đốt lên backend
+            // Backend /api/update_calories cộng dồn giá trị nhận được
+            // Nên gửi tổng calories đã đốt được trong phiên là hợp lý với logic backend hiện tại
+            
+            // Get current values before resetting
+            const currentCaloriesStr = caloriesDisplay.textContent;
+            const currentCalories = parseFloat(currentCaloriesStr.replace(' kcal', ''));
+
+            const currentDistanceStr = distanceDisplay.textContent;
+            const currentDistance = parseFloat(currentDistanceStr.replace(' km', ''));
+
+            const currentTimeStr = timeDisplay.textContent;
+            const timeParts = currentTimeStr.split(':');
+            const currentTotalSeconds = parseInt(timeParts[0]) * 3600 + parseInt(timeParts[1]) * 60 + parseInt(timeParts[2]);
+            const currentTotalMinutes = currentTotalSeconds / 60;
       
-        // Reset hiển thị
-        caloriesDisplay.textContent = '0 kcal';
-        distanceDisplay.textContent = '0 km';
-        timeDisplay.textContent = '0:00:00';
-        lastFetchedCalories = 0.0; // Reset biến lưu trữ
-        congratsShownThisSession = false; // Reset cờ hiển thị chúc mừng
-
-        startTime = null; // Đặt lại thời gian bắt đầu
-
-        resetStartButton(); // Đặt lại trạng thái nút về ban đầu    
-
-        alert('Tracking session ended.');
+            
+            alert('Tracking session ended.');
+            console.log('Dữ liệu gửi đi:', {
+                caloriesBurned: currentCalories,
+                distanceTravelled: currentDistance,
+                timeTracked: currentTotalMinutes
+            });
+            // Gửi lượng calories đã đốt lên backend
+            fetch('/api/update_totals', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    caloriesBurned: currentCalories,
+                    distanceTravelled: currentDistance,
+                    timeTracked: currentTotalMinutes,
+                }),
+            })
       
-        // Gửi lượng calories đã đốt lên backend
-        // Backend /api/update_calories cộng dồn giá trị nhận được
-        // Nên gửi tổng calories đã đốt được trong phiên là hợp lý với logic backend hiện tại
-        if (caloriesBurned > 0) { // Chỉ gửi nếu có calories > 0
-            fetch('/api/update_calories', {
-            method: 'POST',
-            headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ caloriesBurned: caloriesBurned }), // Gửi tổng calories của phiên
-         })
-          .then(response => {
-           if (response.ok) {
-            console.log('Calories updated successfully on the server.');
-           } else {
-            console.error('Failed to update calories on the server.');
-            // Nếu lỗi 401, chuyển hướng
-            if (response.status === 401) {
-                alert("Session expired. Redirecting to login.");
-                window.location.href = '/login';
-            }
-            }
-          })
-          .catch(error => {
-           console.error('Error sending update calories request:', error);
-          });
-        } else {
-            console.log("No calories burned in this session, skipping update.");
-        }
+            .then(response => {
+                if (response.ok) {
+                    console.log('Calories updated successfully on the server.');
+                } else {
+                    console.error('Failed to update calories on the server.');
+                }
+            })
+            .catch(error => {
+                console.error('Error sending update calories request:', error);
+            });
+        }    
+
     }
     }
     function resetStartButton() {
