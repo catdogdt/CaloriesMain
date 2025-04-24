@@ -81,7 +81,7 @@ class GPSTracker:
         with self._lock:
             print(f"[{datetime.datetime.now().strftime('%H:%M:%S.%f')}] Tracker {self.iphone_ip}: is_connected() called. Currently returning {self._connection_status}") # Log mỗi lần hàm được gọi và giá trị trả về
             return self._connection_status
-        
+            
     def run_tracking_loop(self):
         print(f"[{datetime.datetime.now().strftime('%H:%M:%S.%f')}] Run loop started for {self.iphone_ip}") # Log khi vòng lặp bắt đầu
         self._running = True # Đảm bảo cờ running là True khi bắt đầu

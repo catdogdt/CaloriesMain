@@ -4,7 +4,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import random
 import time
-#from flask_mail import Mail, Message  # Nếu bạn muốn gửi email thực sự
 import traceback  # Thêm import cho module traceback
 import datetime 
 
@@ -170,7 +169,7 @@ def login():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, password, lastChangecalories FROM users WHERE email = ?", (email,))    
+    cursor.execute("SELECT id, password, lastChangecalories FROM users WHERE email = ?", (email,))   
     user = cursor.fetchone()
     if user:
         if check_password_hash(user['password'], password):
