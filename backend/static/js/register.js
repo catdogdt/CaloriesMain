@@ -44,7 +44,15 @@ const Register = () => {
                 <span className="icon">
                     <ion-icon name="mail-outline"></ion-icon>
                 </span>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <input 
+                    type="email" 
+                    value={email} 
+                    onChange={(e) => {
+                        setEmail(e.target.value);
+                        console.log("Email changed to:", e.target.value);
+                    }} 
+                    required 
+                />
                 <label> Email </label>
             </div>
             <div className="input-box">

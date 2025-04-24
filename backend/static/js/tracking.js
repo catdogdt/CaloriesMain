@@ -140,9 +140,13 @@ document.addEventListener('DOMContentLoaded', () => {
             distanceDisplay.textContent = '0 km';
             timeDisplay.textContent = '0:00:00';   
             alert('Tracking session ended.');
-
+            console.log('Dữ liệu gửi đi:', {
+                caloriesBurned: currentCalories,
+                distanceTravelled: currentDistance,
+                timeTracked: currentTotalMinutes
+            });
             // Gửi lượng calories đã đốt lên backend
-            fetch('/api/update_calories', {
+            fetch('/api/update_totals', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

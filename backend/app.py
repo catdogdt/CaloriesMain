@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, session, redirect
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
 from flask_cors import CORS
 from auth import auth
 from gps_tracker import start_gps_tracking, get_tracking_data, is_connected
@@ -14,7 +14,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 import os
-DATABASE = os.path.abspath('database.db')
+DATABASE = os.path.join(os.path.dirname(__file__), 'database.db')
 
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.register_blueprint(auth, url_prefix="/auth")
@@ -23,14 +23,16 @@ user_ips = {}
 tracking_threads = {}
 
 def get_db():
+    print('>>> Connecting to DB:', DATABASE)
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
+
     
 def get_user_info(user_id):
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("SELECT email, targetCaloriesburned AS goal FROM users WHERE id = ?", (user_id,))
+    cursor.execute("SELECT email, targetCaloriesburned AS goal, totalKcal, totalKm, totalMin FROM users WHERE id = ?", (user_id,))
     user = cursor.fetchone()
     db.close()
     if user:
@@ -132,13 +134,30 @@ def profile_page():
         if user_data:
             return render_template('profile.html',  
                                    user=user_data,
-                                   total_kcal=user_data.get('totalKcal', 0.0),
+                                   total_kcal=user_data.get('totalKcal', 0.00),
                                    total_km=user_data.get('totalKm', 0.00),
-                                   total_min=user_data.get('totalMin', 0))
+                                   total_min=user_data.get('totalMin', 0.00))
         else:
             return render_template('profile.html', error="Could not load profile information.")
     else:
         return redirect('/login')
+    
+@app.route('/api/profile')
+def get_profile_data():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        user_data = get_user_info(user_id)
+        if user_data:
+            return jsonify({
+                'total_kcal': user_data.get('totalKcal'),
+                'total_km': user_data.get('totalKm'),
+                'total_min': user_data.get('totalMin'),
+                'goal': user_data.get('goal', 0)
+            })
+        else:
+            return jsonify({'error': 'Could not load profile information.'}), 404
+    else:
+        return jsonify({'error': 'User not logged in.'}), 401
 
 @app.route('/dashboard')
 def dashboard_page():
@@ -172,11 +191,11 @@ def register_ip():
             return jsonify({"status": "success", "message": "GPS tracking started"}), 200
         else:
             print("❌ Failed to start GPS tracking (after wait)")
-            return jsonify({"status": "error", "message": "Không thể kết nối với thiết bị sau một khoảng thời gian. Hãy đảm bảo thiết bị đã bật và địa chỉ IP chính xác."}), 200
+            return jsonify({"status": "error", "message": "Unable to connect to the device after a period of time. Make sure the device is turned on and the IP address is correct."}), 200
 
     except Exception as e:
         print(f"❌ Error Starting GPS Tracking: {e}")
-        return jsonify({"status": "error", "message": f"Lỗi khi bắt đầu theo dõi GPS: {e}"}), 500
+        return jsonify({"status": "error", "message": f"Error while starting GPS tracking: {e}"}), 500
     
 
 @app.route("/get_tracking_data", methods=["GET"])
@@ -470,38 +489,56 @@ def change_password():
     
 @app.route('/api/update_totals', methods=['POST'])
 def update_totals():
+    print('update_totals route called')
     if 'user_id' in session:
         user_id = session['user_id']
         data = request.get_json()
-        calories_burned = data.get('caloriesBurned', 0)
-        distance_travelled = data.get('distanceTravelled', 0)
-        time_tracked = data.get('timeTracked', 0)
+        print('Received data:', data)
+        calories_burned_session = float(data.get('caloriesBurned', 0))
+        distance_travelled = float(data.get('distanceTravelled', 0))
+        time_tracked = float(data.get('timeTracked', 0))
 
         conn = get_db()
         cursor = conn.cursor()
         try:
-            # Lấy giá trị hiện tại từ database
-            cursor.execute("SELECT totalKcal, totalKm, totalMin FROM users WHERE id = ?", (user_id,))
+            # Cập nhật totalKcal, totalKm, totalMin
+            cursor.execute("""
+                UPDATE users
+                SET totalKcal = IFNULL(totalKcal, 0) + ?,
+                    totalKm = IFNULL(totalKm, 0) + ?,
+                    totalMin = IFNULL(totalMin, 0) + ?
+                WHERE id = ?
+            """, (calories_burned_session, distance_travelled, time_tracked, user_id))
+
+            # Lấy caloriesCurrentday, lastChangecalories, numberOfDays, last_day_incremented hiện tại
+            cursor.execute("SELECT caloriesCurrentday, lastChangecalories, numberOfDays, last_day_incremented FROM users WHERE id = ?", (user_id,))
             result = cursor.fetchone()
+            current_calories_day = result['caloriesCurrentday'] if result else 0
+            last_change_calories = result['lastChangecalories']
+            number_of_days = result['numberOfDays'] if result['numberOfDays'] is not None else 0
+            last_day_incremented = result['last_day_incremented']
 
-            if result:
-                current_total_kcal = result['totalKcal'] if result['totalKcal'] is not None else 0.0
-                current_total_km = result['totalKm'] if result['totalKm'] is not None else 0.0
-                current_total_min = result['totalMin'] if result['totalMin'] is not None else 0
+            # Tính toán caloriesCurrentday mới
+            new_calories_day = current_calories_day + calories_burned_session
 
-                new_total_kcal = current_total_kcal + calories_burned
-                new_total_km = current_total_km + distance_travelled
-                new_total_min = current_total_min + time_tracked
+            # Lấy ngày hiện tại
+            today_str = datetime.date.today().isoformat()
 
-                # Cập nhật giá trị mới vào database
-                cursor.execute("UPDATE users SET totalKcal = ?, totalKm = ?, totalMin = ? WHERE id = ?",
-                               (new_total_kcal, new_total_km, new_total_min, user_id))
-                conn.commit()
-                conn.close()
-                return jsonify({'message': 'Totals updated successfully'}), 200
-            else:
-                conn.close()
-                return jsonify({'error': 'User not found'}), 404
+            # Cập nhật lastChangecalories
+            cursor.execute("UPDATE users SET lastChangecalories = ? WHERE id = ?", (today_str, user_id))
+
+            # Kiểm tra và cập nhật numberOfDays và last_day_incremented
+            if (last_day_incremented is None or last_day_incremented != last_change_calories) and (new_calories_day > 0):
+                number_of_days += 1
+                cursor.execute("UPDATE users SET numberOfDays = ?, last_day_incremented = ? WHERE id = ?",
+                               (number_of_days, last_change_calories, user_id))
+
+            # Cập nhật caloriesCurrentday
+            cursor.execute("UPDATE users SET caloriesCurrentday = ? WHERE id = ?", (new_calories_day, user_id))
+
+            conn.commit()
+            conn.close()
+            return jsonify({'message': 'Totals, daily calories, and day count updated successfully'}), 200
         except Exception as e:
             conn.rollback()
             conn.close()
