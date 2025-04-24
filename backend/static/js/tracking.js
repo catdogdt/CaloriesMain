@@ -120,35 +120,50 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function endTracking() {
         if (confirm('Are you sure you want to end the tracking session?')) {
-         clearInterval(trackingInterval);
-         resetStartButton();
-         const currentCaloriesStr = caloriesDisplay.textContent;
-         const caloriesBurned = parseFloat(currentCaloriesStr.replace(' kcal', ''));
+            clearInterval(trackingInterval);
+            resetStartButton();
+            
+            // Get current values before resetting
+            const currentCaloriesStr = caloriesDisplay.textContent;
+            const currentCalories = parseFloat(currentCaloriesStr.replace(' kcal', ''));
+
+            const currentDistanceStr = distanceDisplay.textContent;
+            const currentDistance = parseFloat(currentDistanceStr.replace(' km', ''));
+
+            const currentTimeStr = timeDisplay.textContent;
+            const timeParts = currentTimeStr.split(':');
+            const currentTotalSeconds = parseInt(timeParts[0]) * 3600 + parseInt(timeParts[1]) * 60 + parseInt(timeParts[2]);
+            const currentTotalMinutes = currentTotalSeconds / 60;
       
-         caloriesDisplay.textContent = '0 kcal';
-         distanceDisplay.textContent = '0 km';
-         timeDisplay.textContent = '0:00:00';   
-         alert('Tracking session ended.');
-      
-         // Gửi lượng calories đã đốt lên backend
-         fetch('/api/update_calories', {
-          method: 'POST',
-          headers: {
-           'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ caloriesBurned: caloriesBurned }),
-         })
-          .then(response => {
-           if (response.ok) {
-            console.log('Calories updated successfully on the server.');
-           } else {
-            console.error('Failed to update calories on the server.');
-           }
-          })
-          .catch(error => {
-           console.error('Error sending update calories request:', error);
-          });
-        }
+            // Reset the display
+            caloriesDisplay.textContent = '0 kcal';
+            distanceDisplay.textContent = '0 km';
+            timeDisplay.textContent = '0:00:00';   
+            alert('Tracking session ended.');
+
+            // Gửi lượng calories đã đốt lên backend
+            fetch('/api/update_calories', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    caloriesBurned: currentCalories,
+                    distanceTravelled: currentDistance,
+                    timeTracked: currentTotalMinutes,
+                }),
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Calories updated successfully on the server.');
+                } else {
+                    console.error('Failed to update calories on the server.');
+                }
+            })
+            .catch(error => {
+                console.error('Error sending update calories request:', error);
+            });
+        }    
     }
 
     function resetStartButton() {

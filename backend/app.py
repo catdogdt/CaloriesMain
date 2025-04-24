@@ -1,13 +1,15 @@
-# app.py
-from flask import Flask, request, jsonify, render_template, session, redirect
+from flask import Flask, request, jsonify, render_template, session, redirect, send_file, url_for
 from flask_cors import CORS
 from auth import auth
 from gps_tracker import start_gps_tracking, get_tracking_data, is_connected
 from threading import Thread
 import sqlite3
-import socket
+import os
+import io
 import time  # Import thư viện time
 import datetime
+import matplotlib.pyplot as plt
+import pandas as pd
 from apscheduler.schedulers.background import BackgroundScheduler
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -25,6 +27,7 @@ tracking_threads = {}
 def get_db():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL;")  # Enable WAL mode
     return conn
     
 def get_user_info(user_id):
@@ -49,6 +52,12 @@ def reset_daily_calories():
             db.close()
             print("🔄 Daily calories reset at midnight.")
 
+def get_db_connection():
+    db_path = os.path.join(os.path.dirname(__file__), 'database.db')
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
 # Initialize the scheduler
 scheduler = BackgroundScheduler()
 scheduler.add_job(reset_daily_calories, 'cron', hour=0, minute=0)
@@ -70,17 +79,61 @@ def register_page():
 
 @app.route('/tracking')
 def tracking_page():
-    if 'user_id' in session:
+    if 'user_id' in session:    
         return render_template('tracking.html')
     else:
         return redirect('/login')
 
 @app.route('/progress')
 def progress_page():
-    if 'user_id' in session:
-        return render_template('progress.html')
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT email FROM users WHERE id = ?", (user_id,))
+    user_record = cursor.fetchone()
+    email = user_record['email'] if user_record else None
+
+    if not email:
+        conn.close()
+        return jsonify({"error": "User email not found"}), 404
+
+    user_data = conn.execute(
+        'SELECT * FROM weekly_calories WHERE email = ?',
+        (email,)
+    ).fetchone()
+    conn.close()
+
+    # If user_data is None, create a default dictionary
+    if user_data is None:
+        weekly_data = {
+            'Monday': 0, 'Tuesday': 0, 'Wednesday': 0, 'Thursday': 0,
+            'Friday': 0, 'Saturday': 0, 'Sunday': 0
+        }
     else:
-        return redirect('/login')
+        weekly_data = {
+            'Monday': user_data['monday'],
+            'Tuesday': user_data['tuesday'],
+            'Wednesday': user_data['wednesday'],
+            'Thursday': user_data['thursday'],
+            'Friday': user_data['friday'],
+            'Saturday': user_data['saturday'],
+            'Sunday': user_data['sunday'],
+        }
+
+    max_calories = max(weekly_data.values()) if weekly_data else 1
+    total = sum(weekly_data.values())
+    avg = round(total / 7, 1)
+
+    return render_template(
+        'progress.html',
+        weekly_data=weekly_data,
+        max_calories=max_calories,
+        total=total,
+        avg=avg
+    )
 
 @app.route('/profile')
 def profile_page():
@@ -88,7 +141,11 @@ def profile_page():
         user_id = session['user_id']
         user_data = get_user_info(user_id)
         if user_data:
-            return render_template('profile.html', user=user_data)
+            return render_template('profile.html',  
+                                   user=user_data,
+                                   total_kcal=user_data.get('totalKcal', 0.0),
+                                   total_km=user_data.get('totalKm', 0.00),
+                                   total_min=user_data.get('totalMin', 0))
         else:
             return render_template('profile.html', error="Could not load profile information.")
     else:
@@ -161,6 +218,7 @@ def mark_congrats_shown():
         try:
             cursor.execute("UPDATE users SET congratsShownDate = ? WHERE id = ?", (today_str, user_id))
             conn.commit()
+            cursor.close()  # Close the cursor explicitly
             conn.close()
             return jsonify({"message": "Congrats shown date updated"}), 200
         except Exception as e:
@@ -185,6 +243,46 @@ def check_connection():
 def logout():
     session.pop('user_id', None)
     return jsonify({"message": "Logged out successfully"}), 200
+
+@app.route('/generate_progress_chart')
+def generate_progress_chart():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    user_id = session['user_id']
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday FROM weekly_calories WHERE id = ?', (user_id,))
+    row = cursor.fetchone()
+
+    conn.close()
+
+    if not row:
+        return jsonify({"error": "No data found"}), 404
+
+    # Unpack the row into variables for each day
+    monday, tuesday, wednesday, thursday, friday, saturday, sunday = row
+
+    # Create a pandas DataFrame
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    calories = [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    data = pd.DataFrame({'Day': days, 'Calories Burned': calories})
+
+    # Create the chart
+    plt.figure(figsize=(10, 6))
+    plt.bar(data['Day'], data['Calories Burned'], color='skyblue')
+    plt.title('Weekly Calories Burned')
+    plt.xlabel('Day')
+    plt.ylabel('Calories')
+    plt.tight_layout()
+
+    # Save to a BytesIO object
+    img_bytes = io.BytesIO()
+    plt.savefig(img_bytes, format='png')
+    img_bytes.seek(0)
+    plt.close()
+
+    return send_file(img_bytes, mimetype='image/png')
 
 @app.route("/api/progress_data", methods=["GET"])
 def get_progress_data():
@@ -241,88 +339,13 @@ def get_daily_progress():
     else:
         return jsonify({"error": "User not logged in"}), 401
 
-# @app.route("/api/update_calories", methods=["POST"])
-# def update_calories():
-#     if 'user_id' in session:
-#         user_id = session['user_id']
-#         data = request.get_json()
-#         calories_burned = data.get('caloriesBurned', 0)
-
-#         conn = get_db()
-#         cursor = conn.cursor()
-#         try:
-#             # Lấy giá trị hiện tại của caloriesCurrentday
-#             cursor.execute("SELECT caloriesCurrentday FROM users WHERE id = ?", (user_id,))
-#             result = cursor.fetchone()
-#             current_calories = result['caloriesCurrentday'] if result and result['caloriesCurrentday'] is not None else 0
-
-#             # Cộng calories đã đốt vào giá trị hiện tại
-#             new_calories = current_calories + calories_burned
-
-#             # Cập nhật giá trị mới vào database
-#             cursor.execute("UPDATE users SET caloriesCurrentday = ? WHERE id = ?", (new_calories, user_id))
-#             conn.commit()
-#             conn.close()
-#             return jsonify({"message": "Calories updated successfully"}), 200
-#         except Exception as e:
-#             conn.rollback()
-#             conn.close()
-#             return jsonify({"error": f"Failed to update calories: {e}"}), 500
-#     else:
-#         return jsonify({"error": "User not logged in"}), 401
-
-# @app.route("/api/update_calories", methods=["POST"])
-# def update_calories():
-#     if 'user_id' in session:
-#         user_id = session['user_id']
-#         data = request.get_json()
-#         calories_burned = data.get('caloriesBurned', 0)
-
-#         conn = get_db()
-#         cursor = conn.cursor()
-#         try:
-#             cursor.execute("SELECT caloriesCurrentday, streak, last_calorie_update FROM users WHERE id = ?", (user_id,))
-#             result = cursor.fetchone()
-#             if result is None:
-#                 conn.close()
-#                 return jsonify({"error": "User not found"}), 404
-#             current_calories = result['caloriesCurrentday'] if result['caloriesCurrentday'] is not None else 0
-#             streak = result['streak'] if result['streak'] is not None else 0
-#             last_update_str = result['last_calorie_update']
-
-#             new_calories = current_calories + calories_burned
-
-#             cursor.execute("UPDATE users SET caloriesCurrentday = ? WHERE id = ? ", (new_calories, user_id))
-
-#             today_str = datetime.date.today().isoformat()
-
-#             if new_calories > 0:
-#                 if last_update_str == today_str:
-#                     # Cập nhật trong cùng một ngày, không tăng streak
-#                     pass
-#                 elif last_update_str != today_str:
-#                     streak += 1
-#             else:
-#                 streak = 0
-
-#             cursor.execute("UPDATE users SET caloriesCurrentday = ?, streak = ?, last_calorie_update = ? WHERE id = ?", (new_calories, streak, today_str, user_id))
-
-#             conn.commit()
-#             conn.close()
-#             return jsonify({"message": "Calories updated successfully"}), 200
-#         except Exception as e:
-#             conn.rollback()
-#             conn.close()
-#             return jsonify({"error": f"Failed to update calories: {e}"}), 500
-#     else:
-#         return jsonify({"error": "User not logged in"}), 401
-
-
 @app.route("/api/update_calories", methods=["POST"])
 def update_calories():
     if 'user_id' in session:
         user_id = session['user_id']
         data = request.get_json()
+        today = datetime.datetime.today().strftime('%A')  # Get the current day of the week as a string
+        query = f"UPDATE weekly_calories SET {today} = ? WHERE id = ?"
         calories_burned = data.get('caloriesBurned', 0)
 
         conn = get_db()
@@ -337,9 +360,20 @@ def update_calories():
             number_of_days = result['numberOfDays'] if result['numberOfDays'] is not None else 0
             last_incremented = result['last_day_incremented']
 
+            # This part we can also update todays calories burnt ? If only we can read what day is it today ????!!?
             new_calories = current_calories + calories_burned
-            cursor.execute("UPDATE users SET caloriesCurrentday = ? WHERE id = ?", (new_calories, user_id))
+            print('skibidiahhhhhhhhhhh',new_calories, type(today)) #Debug -> Still works
+            # Debugging: Check if user_id exists in the database
+            cursor.execute("SELECT id FROM users WHERE id = ?", (user_id,))
+            user_exists = cursor.fetchone()
+            if not user_exists:
+                conn.close()
+                return jsonify({"error": "User not found"}), 404
 
+            # Proceed to update calories if user exists
+            cursor.execute("UPDATE users SET caloriesCurrentday = ? WHERE id = ?", (new_calories, user_id))
+            cursor.execute(query, (new_calories, user_id))
+            conn.commit()  # Ensure the changes are committed immediately after the update
             today_str = datetime.date.today().isoformat()
 
             if new_calories > 0:
@@ -422,5 +456,46 @@ def change_password():
         conn.close()
         return jsonify({"error": f"Failed to update password: {e}"}), 500
     
+@app.route('/api/update_totals', methods=['POST'])
+def update_totals():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        data = request.get_json()
+        calories_burned = data.get('caloriesBurned', 0)
+        distance_travelled = data.get('distanceTravelled', 0)
+        time_tracked = data.get('timeTracked', 0)
+
+        conn = get_db()
+        cursor = conn.cursor()
+        try:
+            # Lấy giá trị hiện tại từ database
+            cursor.execute("SELECT totalKcal, totalKm, totalMin FROM users WHERE id = ?", (user_id,))
+            result = cursor.fetchone()
+
+            if result:
+                current_total_kcal = result['totalKcal'] if result['totalKcal'] is not None else 0.0
+                current_total_km = result['totalKm'] if result['totalKm'] is not None else 0.0
+                current_total_min = result['totalMin'] if result['totalMin'] is not None else 0
+
+                new_total_kcal = current_total_kcal + calories_burned
+                new_total_km = current_total_km + distance_travelled
+                new_total_min = current_total_min + time_tracked
+
+                # Cập nhật giá trị mới vào database
+                cursor.execute("UPDATE users SET totalKcal = ?, totalKm = ?, totalMin = ? WHERE id = ?",
+                               (new_total_kcal, new_total_km, new_total_min, user_id))
+                conn.commit()
+                conn.close()
+                return jsonify({'message': 'Totals updated successfully'}), 200
+            else:
+                conn.close()
+                return jsonify({'error': 'User not found'}), 404
+        except Exception as e:
+            conn.rollback()
+            conn.close()
+            return jsonify({'error': f'Failed to update totals: {e}'}), 500
+    else:
+        return jsonify({'error': 'User not logged in'}), 401
+
 if __name__ == "__main__":
     app.run(debug=True)
