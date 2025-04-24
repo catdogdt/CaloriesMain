@@ -5,7 +5,6 @@ const iconClose = document.querySelector('.icon-close');
 const getStartedButton = document.getElementById('showLoginPopup');
 const loginForm = document.querySelector('.form-box.login form');
 const registerForm = document.querySelector('.form-box.register form');
-const forgotPasswordLink = document.querySelector('.forgot-password-link'); // Dòng có thể gây lỗi
 const forgotPasswordForm = document.querySelector('.form-box.forgot-password form'); // Dòng có thể gây lỗi
 const forgotPasswordLoginLink = document.querySelector('.form-box.forgot-password .login-register p a');
 
@@ -29,14 +28,6 @@ getStartedButton.addEventListener('click', () => {
     wrapper.classList.add('active-popup');
     wrapper.classList.remove('active');
     wrapper.classList.remove('active-forgot-password'); // Đảm bảo chỉ popup hiện
-});
-
-// Xử lý khi nhấn "Forgot Password"
-forgotPasswordLink.addEventListener('click', (e) => { // Dòng 34 có thể ở đây
-    e.preventDefault(); // Ngăn chặn hành vi mặc định của link (#)
-    wrapper.classList.add('active-popup');
-    wrapper.classList.add('active-forgot-password');
-    wrapper.classList.remove('active'); // Đảm bảo register bị ẩn
 });
 
 loginForm.addEventListener('submit', async (e) => {

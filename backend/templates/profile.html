@@ -26,8 +26,7 @@
                 </div>
                 <div class="target-info">
                     <div class="target-text">Target calories burned/day (kcal)</div>
-                    <div class="email-text">Keep it up {{ user.email }}</div>                    
-                    <div class="bottom-button">
+                    <div class="email-text" style="font-size: 20px;">Keep it up, <span style="color: #FF8C00;">{{ user.email }}!</span></div>                    <div class="bottom-button">
                         <button class="button" onclick="showUpdateTarget()">Update target</button>
                         <button class="button" onclick="showChangePasswordModal()">Change Password</button>
                     </div>
@@ -84,7 +83,7 @@
         </span>
         <div class="form-box change-password">
             <h2> Change Password </h2>
-            <form action="{{ url_for('change_password') }}" method="POST">
+            <form action="/change_password" method="POST" id="changePasswordForm">
                 <div class="input-box">
                     <span class="icon">
                         <ion-icon name="lock-closed"></ion-icon>

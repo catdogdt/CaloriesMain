@@ -1,12 +1,13 @@
 const profileSection = document.getElementById('profileSection');
 const currentBurnedCaloriesSpan = document.getElementById('currentBurnedCalories');
 const newCalorieTargetInput = document.getElementById('newCalorieTarget');
+const totalKcalElement = document.getElementById('totalKcal');
+const totalKmElement = document.getElementById('totalKm');
+const totalMinElement = document.getElementById('totalMin');
+const changePasswordForm = document.getElementById('changePasswordForm'); // Lấy form để reset khi đóng
 
 const updateTargetWrapper = document.getElementById('updateTargetWrapper');
 const changePasswordWrapper = document.getElementById('changePasswordWrapper'); // Sử dụng ID đã thêm
-const updateTargetCloseButton = document.querySelector('#updateTargetWrapper .update-target-close');
-const changePasswordCloseButton = document.querySelector('#changePasswordWrapper .change-password-close');
-const changePasswordForm = document.getElementById('changePasswordForm'); // Lấy form để reset khi đóng
 
 
 function showUpdateTarget() {
@@ -137,6 +138,7 @@ function saveNewTarget() {
 }
 
 function changePassword() {
+    console.log('changePassword() called');
     const currentPasswordInput = document.querySelector('#changePasswordWrapper input[name="current_password"]');
     const newPasswordInput = document.querySelector('#changePasswordWrapper input[name="new_password"]');
     const confirmNewPasswordInput = document.querySelector('#changePasswordWrapper input[name="confirm_new_password"]');
@@ -221,6 +223,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (changePasswordForm) {
         changePasswordForm.addEventListener('submit', function(event) {
             event.preventDefault(); // Ngăn chặn submit form mặc định
+            console.log('Form submitted'); // Thêm dòng này
+
             changePassword(); // Gọi hàm xử lý logic đổi mật khẩu
         });
     }
@@ -262,4 +266,43 @@ document.addEventListener('DOMContentLoaded', function() {
              if (input.value !== '') { label.style.top = '-5px'; }
         }
     }
+    fetchProfileData();
 });
+
+// Hàm này có thể được gọi sau khi bạn fetch dữ liệu profile từ backend
+function updateProfileData(data) {
+    if (totalKcalElement) {
+        totalKcalElement.textContent = data.total_kcal !== null ? parseFloat(data.total_kcal).toFixed(2) : '0.00';
+    }
+
+    if (totalKmElement) {
+        totalKmElement.textContent = data.total_km !== null ? parseFloat(data.total_km).toFixed(2) : '0.00';
+    }
+
+    if (totalMinElement) {
+        totalMinElement.textContent = data.total_min !== null ? parseFloat(data.total_min).toFixed(2) : '0.00';
+    }
+
+    if (currentBurnedCaloriesSpan && data.goal !== null) {
+        currentBurnedCaloriesSpan.textContent = parseFloat(data.goal).toFixed(0);
+    }
+}
+
+// Ví dụ về cách bạn có thể fetch dữ liệu profile và gọi updateProfileData
+async function fetchProfileData() {
+    try {
+        const response = await fetch('/api/profile'); // Thay '/api/profile' bằng endpoint thực tế của bạn
+        if (response.ok) {
+            const data = await response.json();
+            updateProfileData(data);
+        } else {
+            console.error('Failed to fetch profile data.');
+            // Hiển thị giá trị mặc định "0.00" nếu fetch lỗi
+            updateProfileData({ total_kcal: 0.00, total_km: 0.00, total_min: 0.00, goal: 0 });
+        }
+    } catch (error) {
+        console.error('Error fetching profile data:', error);
+        // Hiển thị giá trị mặc định "0.00" nếu có lỗi mạng
+        updateProfileData({ total_kcal: 0.00, total_km: 0.00, total_min: 0.00, goal: 0 });
+    }
+}

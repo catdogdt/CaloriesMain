@@ -20,55 +20,6 @@
     
     <div class="main-container">
         <div class="calorie-tracker">
-            <!-- <div class="header">
-                <h1>Calorie Tracking</h1>
-            </div>
-            <div class="summary">
-                <div class="avg">
-                    <div class="date-range">Apr 13 - Apr 19</div>
-                    <div class="value">{{ avg }}</div>
-                    <div class="label">Avg</div>
-                </div>
-                <div class="total">
-                    <div class="value">0.0</div>
-                    <div class="label">{{ total }}</div>
-                </div>
-            </div>
-            <div class="chart-container">
-                <div class="y-axis">
-                    <span>0</span>
-                    <span>250</span>
-                    <span>500</span>
-                    <span>750</span>
-                    <span>1000</span>
-                </div>
-                <div class="chart">
-                    {% for day, calories in weekly_data.items() %}
-                        {% set height = (calories / max_calories * 100) if max_calories else 0 %}
-                        <div class="bar {% if calories == max_calories %}green new-record{% else %}gray{% endif %}" 
-                             style="height: {{ height }}%;" 
-                             data-day="{{ day[0] }}">
-                            {% if calories == max_calories %}
-                                <div class="star">⭐</div>
-                                <div class="tooltip">
-                                    New record!<br>{{ calories }} Kcal<br>{{ day }}
-                                </div>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                
-                    <div class="x-axis">
-                        {% for day in weekly_data.keys() %}
-                            <span>{{ day[0] }}</span>
-                        {% endfor %}
-                    </div>
-                
-                    <div class="target-line"></div>
-                </div>
-            </div>
-            <div class="navigation-buttons"> <button id="prevWeekBtn">&lt;</button>
-                <button id="nextWeekBtn">&gt;</button>
-            </div> -->
             <div class="chart-container">
                 <button id="generateChart">Generate Progress Chart</button>
                 <br>
@@ -90,7 +41,8 @@
             </div>
 
             <div class="healthy-day-card">
-                <div class="number" id="healthy-streak"></div> <div class="label">💖Number of healthy days</div>
+                <div class="number" id="healthy-streak"></div> 
+                <div class="label">💖Number of healthy days</div>
                 <div class="quote">The first step is as good as half over.</div>
             </div>
 

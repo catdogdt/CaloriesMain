@@ -4,8 +4,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import random
 import time
-from flask_mail import Mail, Message  # Nếu bạn muốn gửi email thực sự
 import traceback  # Thêm import cho module traceback
+import datetime
 
 auth = Blueprint('auth', __name__)
 
@@ -56,15 +56,29 @@ def forgot_password():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+    cursor.execute("SELECT id, password, lastChangecalories FROM users WHERE email = ?", (email,))    
     user = cursor.fetchone()
-    if not user:
-        conn.close()
-        return jsonify({"error": "Email not found"}), 404
+    if user:
+        if check_password_hash(user['password'], password):
+            session['user_id'] = user['id']
+            today_str = datetime.date.today().isoformat() # lấy ngày hiện tại
+        if not user:
+            conn.close()
+            return jsonify({"error": "Email not found"}), 404
 
-    otp = generate_otp()
-    expiry_time = int(time.time()) + OTP_EXPIRATION_TIME
-
+        if user['lastChangecalories'] is None or user['lastChangecalories'] < today_str:
+            conn = get_db()
+            cursor = conn.cursor()
+            cursor.execute("UPDATE users SET caloriesCurrentday = 0")
+            conn.commit()
+            conn.close()
+            return jsonify({"message": "Logged in successfully, daily calories reset"}), 200
+        else:
+            return jsonify({"message": "Login successful"}), 200
+        else:
+            conn.close()
+            return jsonify({"error": "Invalid credentials"}), 401
+            
     try:
         cursor.execute("INSERT OR REPLACE INTO password_reset_tokens (email, otp, expiry_time) VALUES (?, ?, ?)", (email, otp, expiry_time))
         conn.commit()
