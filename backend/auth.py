@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 import random
 import time
-from flask_mail import Mail, Message  # Nếu bạn muốn gửi email thực sự
+#from flask_mail import Mail, Message  # Nếu bạn muốn gửi email thực sự
 import traceback  # Thêm import cho module traceback
 import datetime 
 
