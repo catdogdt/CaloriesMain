@@ -42,6 +42,7 @@ init_db()  # Create tables if they don't exist
 def get_db():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL;") 
     return conn
 
 def generate_otp():

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, session, redirect, url_for
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for, send_file
 from flask_cors import CORS
 from auth import auth
 from gps_tracker import GPSTracker
@@ -6,7 +6,10 @@ from threading import Thread
 import sqlite3
 import time  # Import thư viện time
 import datetime
-import os
+import os 
+import io
+import matplotlib.pyplot as plt
+import pandas as pd
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -205,6 +208,46 @@ def register_ip():
         if user_id in active_trackers:
             del active_trackers[user_id]
         return jsonify({"status": "error", "message": f"Lỗi khi bắt đầu theo dõi GPS: {e}"}), 500
+@app.route("/generate_progress_chart")
+def generate_progress_chart():
+    if 'user_id' not in session:
+        return jsonify({"error": "User not logged in"}), 401
+
+    user_id = session['user_id']
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Fetch weekly calories data
+    cursor.execute('SELECT Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday FROM users WHERE id = ?', (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return jsonify({"error": "No data found"}), 404
+
+    # Unpack the row into variables for each day
+    monday, tuesday, wednesday, thursday, friday, saturday, sunday = row
+
+    # Create a pandas DataFrame
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    calories = [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+    data = pd.DataFrame({'Day': days, 'Calories Burned': calories})
+
+    # Generate the bar chart
+    plt.figure(figsize=(10, 6))
+    plt.bar(data['Day'], data['Calories Burned'], color='skyblue')
+    plt.title('Weekly Calories Burned')
+    plt.xlabel('Day')
+    plt.ylabel('Calories')
+    plt.tight_layout()
+
+    # Save the chart to a BytesIO object
+    img_bytes = io.BytesIO()
+    plt.savefig(img_bytes, format='png')
+    img_bytes.seek(0)
+    plt.close()
+
+    return send_file(img_bytes, mimetype='image/png')
     
 @app.route("/connection_status", methods=["GET"])
 def check_connection():
@@ -401,10 +444,10 @@ def update_totals():
             new_calories_day = current_calories_day + calories_burned_session
 
             # Lấy ngày hiện tại
-            today_str = datetime.date.today().isoformat()
-            print("Skibidi ahhhhh",new_calories_day, today_str)
+            today = datetime.datetime.now().strftime('%A') 
+            print("Skibidi ahhhhh",new_calories_day, today, type(today))
             # Cập nhật lastChangecalories
-            cursor.execute("UPDATE users SET lastChangecalories = ? WHERE id = ?", (today_str, user_id))
+            cursor.execute("UPDATE users SET lastChangecalories = ? WHERE id = ?", (today, user_id))
 
             # Kiểm tra và cập nhật numberOfDays và last_day_incremented
             if (last_day_incremented is None or last_day_incremented != last_change_calories) and (new_calories_day > 0):
@@ -414,6 +457,9 @@ def update_totals():
 
             # Cập nhật caloriesCurrentday
             cursor.execute("UPDATE users SET caloriesCurrentday = ? WHERE id = ?", (new_calories_day, user_id))
+            
+            query = f"UPDATE users SET {today} = IFNULL({today}, 0) + ? WHERE id = ?"
+            cursor.execute(query, (new_calories_day, user_id))
 
             conn.commit()
             conn.close()

@@ -22,54 +22,14 @@
         <div class="calorie-tracker">
             <div class="header">
                 <h1>Calorie Tracking</h1>
+                <!-- Updated button ID -->
+                <button id="generateChartButton">Generate Chart</button>                <br>
+                <!-- Keep the image ID as progressChart -->
+                <img id="progressChart" src="" alt="Progress Chart" style="display:none; margin-top: 20px; max-width: 600px;">
             </div>
-            <div class="summary">
-                <div class="avg">
-                    <div class="date-range">Apr 13 - Apr 19</div>
-                    <div class="value">{{ avg }}</div>
-                    <div class="label">Avg</div>
-                </div>
-                <div class="total">
-                    <div class="value">0.0</div>
-                    <div class="label">{{ total }}</div>
-                </div>
-            </div>
-            <div class="chart-container">
-                <div class="y-axis">
-                    <span>0</span>
-                    <span>250</span>
-                    <span>500</span>
-                    <span>750</span>
-                    <span>1000</span>
-                </div>
-                <div class="chart">
-                    {% for day, calories in weekly_data.items() %}
-                        {% set height = (calories / max_calories * 100) if max_calories else 0 %}
-                        <div class="bar {% if calories == max_calories %}green new-record{% else %}gray{% endif %}" 
-                             style="height: {{ height }}%;" 
-                             data-day="{{ day[0] }}">
-                            {% if calories == max_calories %}
-                                <div class="star">⭐</div>
-                                <div class="tooltip">
-                                    New record!<br>{{ calories }} Kcal<br>{{ day }}
-                                </div>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                
-                    <div class="x-axis">
-                        {% for day in weekly_data.keys() %}
-                            <span>{{ day[0] }}</span>
-                        {% endfor %}
-                    </div>
-                
-                    <div class="target-line"></div>
-                </div>
-            </div>
-            <div class="navigation-buttons"> <button id="prevWeekBtn">&lt;</button>
-                <button id="nextWeekBtn">&gt;</button>
-            </div>
+            <script src="{{ url_for('static', filename='js/progress.js') }}"></script>
         </div>
+    </div>
         <!-- ----------------------------------------- -->
         <div class="right-section">
             <div class="completion-card">

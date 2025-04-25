@@ -9,6 +9,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const circumference = 2 * Math.PI * circleRadius;   
     const streakElement = document.getElementById('healthy-streak'); // Lấy phần tử hiển thị numberOfDays
 
+    // Chart elements
+    const generateChartButton = document.getElementById('generateChartButton');    const progressChartImage = document.getElementById('progressChart');
+    generateChartButton.addEventListener('click', async () => {
+        try {
+            const response = await fetch('/generate_progress_chart');
+            console.log("Debig: Response status:", response.status);
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                progressChartImage.src = url;
+                progressChartImage.style.display = 'block';
+            } else {
+                alert('Failed to generate chart. Please try again later.');
+            }
+        } catch (error) {
+            console.error('Error generating progress chart:', error);
+            alert('An error occurred while generating the chart.');
+        }
+    }); // <-- Add this closing brace and parenthesis
+
     function getWeekDates(date) {
         const currentDay = date.getDay();
         const diff = date.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
