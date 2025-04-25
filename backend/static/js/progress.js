@@ -10,7 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const streakElement = document.getElementById('healthy-streak'); // Lấy phần tử hiển thị numberOfDays
 
     // Chart elements
-    const generateChartButton = document.getElementById('generateChartButton');    const progressChartImage = document.getElementById('progressChart');
+    const generateChartButton = document.getElementById('generateChartButton');    
+    const progressChartImage = document.getElementById('progressChart');
     generateChartButton.addEventListener('click', async () => {
         try {
             const response = await fetch('/generate_progress_chart');
@@ -51,12 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const weekDates = getWeekDates(new Date(date));
         const startDate = formatDate(weekDates[0]);
         const endDate = formatDate(weekDates[6]);
-        dateRangeDisplay.textContent = `${startDate} - ${endDate}`;
-        // Gọi API để lấy dữ liệu calo hàng tuần và cập nhật biểu đồ (nếu cần)
-        // fetch(`/api/weekly_calories?start=${weekDates[0].toISOString()}&end=${weekDates[6].toISOString()}`)
-        //     .then(response => response.json())
-        //     .then(data => updateChart(data))
-        //     .catch(error => console.error('Error fetching weekly calories:', error));
         console.log('Fetching data for week:', startDate, '-', endDate);
     }
 
@@ -104,17 +99,17 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDateRange(currentDate);
     fetchProgressData();
     
-    prevWeekBtn.addEventListener('click', () => {
-        currentDate.setDate(currentDate.getDate() - 7);
-        updateDateRange(currentDate);
-        // Có thể gọi lại fetchProgressData nếu bạn muốn hiển thị tiến trình của tuần trước/sau
-    });
+    // prevWeekBtn.addEventListener('click', () => {
+    //     currentDate.setDate(currentDate.getDate() - 7);
+    //     updateDateRange(currentDate);
+    //     // Có thể gọi lại fetchProgressData nếu bạn muốn hiển thị tiến trình của tuần trước/sau
+    // });
 
-    nextWeekBtn.addEventListener('click', () => {
-        currentDate.setDate(currentDate.getDate() + 7);
-        updateDateRange(currentDate);
-        // Có thể gọi lại fetchProgressData nếu bạn muốn hiển thị tiến trình của tuần trước/sau
-    });
+    // nextWeekBtn.addEventListener('click', () => {
+    //     currentDate.setDate(currentDate.getDate() + 7);
+    //     updateDateRange(currentDate);
+    //     // Có thể gọi lại fetchProgressData nếu bạn muốn hiển thị tiến trình của tuần trước/sau
+    // });
 
     const logoutButton = document.querySelector('.btnLogin-popup');
     if (logoutButton) {
@@ -143,34 +138,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-function updateChart(data) {
-    // Hàm này sẽ nhận dữ liệu mới và cập nhật các cột biểu đồ (nếu bạn có dữ liệu hàng tuần)
-    const bars = document.querySelectorAll('.chart .bar');
-    bars.forEach((bar, index) => {
-        const day = bar.dataset.day;
-        const dataForDay = data.find(item => item.day === day);
-        if (dataForDay) {
-            const heightPercentage = (dataForDay.calories / 1000) * 100; // Ví dụ: max calo là 1000
-            bar.style.height = `${Math.min(heightPercentage, 100)}%`;
-            const tooltip = bar.querySelector('.tooltip');
-            if (tooltip && dataForDay.details) {
-                tooltip.innerHTML = `Calories: ${dataForDay.details.calories} Kcal<br>Date: ${formatDate(new Date(dataForDay.details.date))}`;
-            }
-        } else {
-            bar.style.height = '20%';
-            const tooltip = bar.querySelector('.tooltip');
-            if (tooltip) {
-                tooltip.textContent = '';
-            }
-        }
-    });
+// function updateChart(data) {
+//     // Hàm này sẽ nhận dữ liệu mới và cập nhật các cột biểu đồ (nếu bạn có dữ liệu hàng tuần)
+//     const bars = document.querySelectorAll('.chart .bar');
+//     bars.forEach((bar, index) => {
+//         const day = bar.dataset.day;
+//         const dataForDay = data.find(item => item.day === day);
+//         if (dataForDay) {
+//             const heightPercentage = (dataForDay.calories / 1000) * 100; // Ví dụ: max calo là 1000
+//             bar.style.height = `${Math.min(heightPercentage, 100)}%`;
+//             const tooltip = bar.querySelector('.tooltip');
+//             if (tooltip && dataForDay.details) {
+//                 tooltip.innerHTML = `Calories: ${dataForDay.details.calories} Kcal<br>Date: ${formatDate(new Date(dataForDay.details.date))}`;
+//             }
+//         } else {
+//             bar.style.height = '20%';
+//             const tooltip = bar.querySelector('.tooltip');
+//             if (tooltip) {
+//                 tooltip.textContent = '';
+//             }
+//         }
+//     });
 
-    const avgValue = document.querySelector('.summary .avg .value');
-    const totalValue = document.querySelector('.summary .total .value');
-    if (data.weeklyAvg) {
-        avgValue.textContent = data.weeklyAvg.toFixed(1);
-    }
-    if (data.weeklyTotal) {
-        totalValue.textContent = data.weeklyTotal.toFixed(1);
-    }
-}
+//     const avgValue = document.querySelector('.summary .avg .value');
+//     const totalValue = document.querySelector('.summary .total .value');
+//     if (data.weeklyAvg) {
+//         avgValue.textContent = data.weeklyAvg.toFixed(1);
+//     }
+//     if (data.weeklyTotal) {
+//         totalValue.textContent = data.weeklyTotal.toFixed(1);
+//     }
+// }

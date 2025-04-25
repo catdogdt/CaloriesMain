@@ -46,34 +46,44 @@ function hideUpdateTargetModal() {
 }
 
 function showChangePasswordModal() {
-    console.log('Hàm showChangePasswordModal() đang được gọi!');
-
     // Ẩn modal cập nhật mục tiêu nếu nó đang hiển thị
     if (updateTargetWrapper) {
         hideUpdateTargetModalInternal(); // Gọi hàm ẩn nội bộ
     }
     if (changePasswordWrapper) {
-        changePasswordWrapper.style.transition = 'transform .5s ease, opacity .5s ease, visibility 0s 0s';
-        changePasswordWrapper.style.visibility = 'visible';
-        changePasswordWrapper.style.opacity = '1';
-        changePasswordWrapper.style.transform = 'translate(-50%, -50%) scale(1)';
+        const inputBoxes = changePasswordForm.querySelectorAll('.input-box');
+        inputBoxes.forEach(box => {
+            box.classList.remove('reset-label'); // Loại bỏ class reset khi hiển thị
+        });
+        setTimeout(() => {
+            changePasswordWrapper.style.transition = 'transform .5s ease, opacity .5s ease, visibility 0s 0s';
+            changePasswordWrapper.style.visibility = 'visible';
+            changePasswordWrapper.style.opacity = '1';
+            changePasswordWrapper.style.transform = 'translate(-50%, -50%) scale(1)';
+        }, 50); // Delay 50ms
     }
 }
 
 // Hàm ẩn modal đổi mật khẩu (nội bộ để tránh gọi lẫn nhau)
 function hideChangePasswordModalInternal() {
     if (changePasswordWrapper) {
+        const inputs = changePasswordForm.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.blur();
+        });
+        changePasswordForm.reset();
+        const labels = changePasswordForm.querySelectorAll('.input-box label');
+        labels.forEach(label => { label.style.top = '50%'; });
+
+        // Force reflow
+        changePasswordWrapper.offsetHeight;
+
         changePasswordWrapper.style.transition = 'transform .5s ease, opacity .5s ease, visibility 0s .5s';
         changePasswordWrapper.style.transform = 'translate(-50%, -50%) scale(0)';
         changePasswordWrapper.style.opacity = '0';
         setTimeout(() => {
             if (changePasswordWrapper.style.opacity === '0') {
                 changePasswordWrapper.style.visibility = 'hidden';
-            }
-            if (changePasswordForm) {
-                changePasswordForm.reset();
-                const labels = changePasswordForm.querySelectorAll('.input-box label');
-                labels.forEach(label => { label.style.top = '50%'; });
             }
         }, 500);
     }

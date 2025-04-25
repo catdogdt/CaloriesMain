@@ -442,7 +442,6 @@ header {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0);
-   
     background-color: #ffffffe6;
     border-radius: 20px;
     backdrop-filter: blur(20px);
@@ -492,7 +491,7 @@ header {
 }
 
 
-.wrapper .form-box.change-password {
+/* .wrapper .form-box.change-password {
     position: absolute;
     transition: none;
     width: 100%;
@@ -501,7 +500,7 @@ header {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-}
+} */    
 
 .input-box {
     position: relative;
@@ -521,6 +520,10 @@ header {
     font-weight: 500;
     pointer-events: none;
     transition: .5s;
+}
+
+.input-box input:not(:focus):not(:valid) ~ label {
+    top: 50%;
 }
 
 .input-box input:focus~label,

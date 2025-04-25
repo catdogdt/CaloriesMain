@@ -493,3 +493,17 @@ header {
 .calorie-tracker .navigation-buttons button:hover {
     background-color: #ddd;
 }
+
+#generateChartButton {
+    background-color: #f0f0f0; /* Màu nền nhạt */
+    color: #333; /* Màu chữ đậm */
+    border: 1px solid #ccc; /* Viền mỏng */
+    padding: 10px 20px; /* Khoảng cách chữ và viền */
+    border-radius: 5px; /* Góc bo tròn nhẹ */
+    cursor: pointer; /* Biểu tượng con trỏ khi di chuột vào */
+    transition: background-color 0.3s ease; /* Hiệu ứng chuyển màu mượt mà */
+  }
+  
+  #generateChartButton:hover {
+    background-color: #ddd; /* Màu nền đậm hơn khi di chuột vào */
+  }
